@@ -304,6 +304,7 @@ footer{margin-top:20px;font-size:11.5px;color:var(--text-faint);font-family:'IBM
       <select id="catSelect" aria-label="Filter by category"></select>
       <select id="ageSelect" aria-label="Filter by age"></select>
       <select id="trendSelect" aria-label="Filter by trend"></select>
+      <select id="ownerSelect" aria-label="Filter by owner"></select>
       <select id="sortSelect" aria-label="Sort games"></select>
       <button class="clear-btn" id="clearBtn" type="button" data-i18n="reset"></button>
     </div>
@@ -432,7 +433,7 @@ const I18N = {
     age_any: "Any age", age_30: "Launched < 30 days ago", age_90: "Launched < 3 months ago", age_365: "Launched < 1 year ago", age_old: "Older than 1 year",
     sort_playing_desc: "Players now ↓", sort_playing_asc: "Players now ↑", sort_visits_desc: "Total visits ↓", sort_vpd_desc: "Visits per day ↓",
     sort_like_desc: "Rating ↓", sort_like_asc: "Rating ↑", sort_age_asc: "Newest first", sort_age_desc: "Oldest first", sort_name_asc: "Name A→Z",
-    sort_favs_desc: "Favorites ↓", sort_upd_asc: "Recently updated",
+    sort_favs_desc: "Favorites ↓", sort_upd_asc: "Recently updated", sort_rev_desc: "Est. earnings ↓", sort_members_desc: "Group size ↓",
     h_game: "Game", h_cat: "Category", h_signals: "Signals", h_rating: "Rating", h_players: "Players", h_visits: "Visits", h_age: "Age",
     h_favs: "Favorites", h_vpd: "Visits/day", h_upd: "Updated",
     count: (n, total, p) => `${n} of ${total} games · ${p} players in them right now`,
@@ -477,6 +478,15 @@ const I18N = {
     sc_flagship: "Original flagship bonus", sc_copycat: "Copy of another hit", sc_ip: "Borrowed IP risk", sc_pattern: "Saturated formula", sc_auto: "Not hand-reviewed",
     sc_noHist: "no growth data yet — momentum counted as neutral",
     coverage: (d, n) => `trend data: ${n} readings over ${d} days · 7d/30d columns fill in as history accumulates`,
+    own_any: "Any owner", own_group: "Owned by a group", own_user: "Owned by a user",
+    h_members: "Group size", h_rev: "Est. $/mo", h_passes: "Passes",
+    bz_title: "Business", bz_hint: "What a buyer looks at: who owns it, how it monetizes, what it might earn.",
+    bz_owner: "Owner", bz_group: "Group (transferable)", bz_user: "User account (not transferable)", bz_members: "Group members", bz_groupAge: "Group created",
+    bz_passes: "Game passes", bz_priceRange: "Pass prices", bz_vip: "Private servers", bz_paid: "Paid access", bz_yes: "yes", bz_no: "no",
+    bz_dau: "Est. daily players (DAU)", bz_rev: "Est. developer earnings", bz_val: "Typical asking price", bz_perMonth: "/ month",
+    bz_note: "Estimates only. DAU ≈ average concurrent players over the last 24 h × 12 (a common Roblox ratio). Earnings assume $6–18 per month per average concurrent player after Roblox's cut (calibrated on publicly reported cases), adjusted for how the game monetizes. Asking prices in the buyer market usually run 12–24× monthly earnings for small and mid-size games; the biggest games are rarely for sale. Roblox publishes none of this; treat it as a starting range for due diligence.",
+    bz_pending: "Ownership and monetization data arrive with the next daily refresh.",
+    sc_group: "Group-owned (transferable)",
     cats: {sim:'Simulator / Idle', rp:'Roleplay', shooter:'Shooter', fight:'Fighting / PvP', action:'Open-world action', obby:'Obby / Platformer', sports:'Sports & Racing', rpg:'RPG / Adventure', horror:'Horror / Survival', party:'Party / Casual', strategy:'Strategy / TD', sandbox:'Sandbox / Building', fangame:'Fan game', other:'Tool / Other'},
     tags: {'brainrot':'Brainrot','mm2-clone':'MM2 clone','mm2-original':'MM2 (the original)','minecraft-clone':'Minecraft-derived','tower':'Tower climb','tower-defense':'Tower defense','steal-pattern':'"Steal a X" formula','plus1-pattern':'"+1 per click" formula','duels-pattern':'"DUELS" arena formula','rng-gacha':'RNG / gacha loop','copycat':'Copy of another hit','licensed-ip':'Borrowed IP','flagship':'Original flagship','anime':'Anime','meme':'Meme premise'},
     signals: {'brainrot':'Brainrot themed','mm2-clone':'MM2 clones','minecraft-clone':'Minecraft-derived','tower':'Tower climbers','steal-pattern':'"Steal a X" formula','plus1-pattern':'"+1 per click" formula','duels-pattern':'"DUELS" arenas','copycat':'Copies of other hits','licensed-ip':'Borrowed IP','flagship':'Original flagships'},
@@ -490,7 +500,7 @@ const I18N = {
     age_any: "Cualquier edad", age_30: "Lanzado hace < 30 días", age_90: "Lanzado hace < 3 meses", age_365: "Lanzado hace < 1 año", age_old: "Más de 1 año",
     sort_playing_desc: "Jugadores ahora ↓", sort_playing_asc: "Jugadores ahora ↑", sort_visits_desc: "Visitas totales ↓", sort_vpd_desc: "Visitas por día ↓",
     sort_like_desc: "Valoración ↓", sort_like_asc: "Valoración ↑", sort_age_asc: "Más nuevos primero", sort_age_desc: "Más antiguos primero", sort_name_asc: "Nombre A→Z",
-    sort_favs_desc: "Favoritos ↓", sort_upd_asc: "Actualizados recientemente",
+    sort_favs_desc: "Favoritos ↓", sort_upd_asc: "Actualizados recientemente", sort_rev_desc: "Ganancia est. ↓", sort_members_desc: "Tamaño de grupo ↓",
     h_game: "Juego", h_cat: "Categoría", h_signals: "Señales", h_rating: "Valoración", h_players: "Jugadores", h_visits: "Visitas", h_age: "Edad",
     h_favs: "Favoritos", h_vpd: "Visitas/día", h_upd: "Actualizado",
     count: (n, total, p) => `${n} de ${total} juegos · ${p} jugadores en ellos ahora mismo`,
@@ -535,6 +545,15 @@ const I18N = {
     sc_flagship: "Bono original insignia", sc_copycat: "Copia de otro éxito", sc_ip: "Riesgo de IP prestada", sc_pattern: "Fórmula saturada", sc_auto: "Sin revisar a mano",
     sc_noHist: "aún sin datos de crecimiento — impulso contado como neutro",
     coverage: (d, n) => `datos de tendencia: ${n} lecturas en ${d} días · las columnas 7d/30d se llenan al acumular historial`,
+    own_any: "Cualquier dueño", own_group: "Propiedad de un grupo", own_user: "Propiedad de un usuario",
+    h_members: "Tamaño grupo", h_rev: "Est. $/mes", h_passes: "Passes",
+    bz_title: "Negocio", bz_hint: "Lo que mira un comprador: quién es el dueño, cómo monetiza y cuánto podría ganar.",
+    bz_owner: "Dueño", bz_group: "Grupo (transferible)", bz_user: "Cuenta de usuario (no transferible)", bz_members: "Miembros del grupo", bz_groupAge: "Grupo creado",
+    bz_passes: "Game passes", bz_priceRange: "Precios de passes", bz_vip: "Servidores privados", bz_paid: "Acceso de pago", bz_yes: "sí", bz_no: "no",
+    bz_dau: "Jugadores diarios est. (DAU)", bz_rev: "Ganancia est. del desarrollador", bz_val: "Precio de venta típico", bz_perMonth: "/ mes",
+    bz_note: "Solo estimaciones. DAU ≈ jugadores concurrentes promedio de las últimas 24 h × 12 (proporción habitual en Roblox). La ganancia asume $6–18 al mes por jugador concurrente promedio tras la comisión de Roblox (calibrado con casos públicos), ajustado por cómo monetiza el juego. En el mercado de compraventa se suele pedir 12–24× la ganancia mensual en juegos pequeños y medianos; los gigantes rara vez se venden. Roblox no publica nada de esto; úsalo como rango inicial para tu diligencia.",
+    bz_pending: "Los datos de propiedad y monetización llegan con la próxima actualización diaria.",
+    sc_group: "Propiedad de grupo (transferible)",
     cats: {sim:'Simulador / Idle', rp:'Roleplay', shooter:'Shooter', fight:'Lucha / PvP', action:'Acción mundo abierto', obby:'Obby / Plataformas', sports:'Deportes y carreras', rpg:'RPG / Aventura', horror:'Terror / Supervivencia', party:'Fiesta / Casual', strategy:'Estrategia / TD', sandbox:'Sandbox / Construcción', fangame:'Fan game', other:'Herramienta / Otro'},
     tags: {'brainrot':'Brainrot','mm2-clone':'Clon de MM2','mm2-original':'MM2 (el original)','minecraft-clone':'Derivado de Minecraft','tower':'Torre','tower-defense':'Tower defense','steal-pattern':'Fórmula "Steal a X"','plus1-pattern':'Fórmula "+1 por clic"','duels-pattern':'Fórmula "DUELS"','rng-gacha':'Bucle RNG / gacha','copycat':'Copia de otro éxito','licensed-ip':'IP prestada','flagship':'Original insignia','anime':'Anime','meme':'Premisa meme'},
     signals: {'brainrot':'Temática brainrot','mm2-clone':'Clones de MM2','minecraft-clone':'Derivados de Minecraft','tower':'Torres','steal-pattern':'Fórmula "Steal a X"','plus1-pattern':'Fórmula "+1 por clic"','duels-pattern':'Arenas "DUELS"','copycat':'Copias de otros éxitos','licensed-ip':'IP prestada','flagship':'Originales insignia'},
@@ -559,7 +578,7 @@ const DEFAULT_SETTINGS = {
   lang: (navigator.language || 'en').toLowerCase().startsWith('es') ? 'es' : 'en',
   theme:'system', numbers:'compact', rows:'150', hideAuto:false, tz:'local',
   minPlayers:'0', rememberFilters:false,
-  cols:{score:true, d7:true, d30:false, d1:false, rating:true, visits:true, age:true, favs:false, vpd:false, upd:false}
+  cols:{score:true, d7:true, d30:false, d1:false, rating:true, visits:true, age:true, favs:false, vpd:false, upd:false, rev:false, members:false, passes:false}
 };
 let settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
 try {
@@ -576,20 +595,20 @@ function applyTheme(){
 }
 applyTheme();
 
-const defaultState = () => ({search:'', cat:'', age:'', trend:'', tags:new Set(), sort:'playing_desc', shown:PAGE});
+const defaultState = () => ({search:'', cat:'', age:'', trend:'', owner:'', tags:new Set(), sort:'playing_desc', shown:PAGE});
 let state = defaultState();
 let view = 'games', marketBy = 'tags';
 
 function saveFilters(){
   if(!settings.rememberFilters) return;
-  try { localStorage.setItem(FILTERS_KEY, JSON.stringify({search:state.search, cat:state.cat, age:state.age, trend:state.trend, tags:[...state.tags], sort:state.sort})); } catch (e) {}
+  try { localStorage.setItem(FILTERS_KEY, JSON.stringify({search:state.search, cat:state.cat, age:state.age, trend:state.trend, owner:state.owner, tags:[...state.tags], sort:state.sort})); } catch (e) {}
 }
 function loadFilters(){
   if(!settings.rememberFilters) return;
   try {
     const f = JSON.parse(localStorage.getItem(FILTERS_KEY) || 'null');
     if(!f) return;
-    state.search = f.search || ''; state.cat = f.cat || ''; state.age = f.age || ''; state.trend = f.trend || '';
+    state.search = f.search || ''; state.cat = f.cat || ''; state.age = f.age || ''; state.trend = f.trend || ''; state.owner = f.owner || '';
     state.tags = new Set(f.tags || []); state.sort = f.sort || 'playing_desc';
   } catch (e) {}
 }
@@ -639,7 +658,19 @@ function computeMetrics(){
     parts.push(['sc_fresh', Math.round(fresh * 15), 15, false]);
     const eng = g.vpd && g.playing ? clamp01((g.vpd / g.playing - 5) / 60) : 0.3;
     parts.push(['sc_engage', Math.round(eng * 15), 15, false]);
+    // business estimates (rough, see bz_note)
+    const last24 = s.length ? s.filter(p => p.t >= s[s.length-1].t - 86400e3) : [];
+    const avgCcu = last24.length >= 3 ? last24.reduce((a,p) => a + p.v, 0) / last24.length : (g.playing || 0);
+    g.dau = avgCcu ? Math.round(avgCcu * 12) : null;
+    let monet = 1;
+    if(g.gp){ monet = g.gp.n === 0 ? 0.5 : (g.gp.n >= 8 || (g.gp.max || 0) >= 500) ? 1.3 : 1; }
+    g.revLow = avgCcu ? Math.round(avgCcu * 6 * monet) : null;
+    g.revHigh = avgCcu ? Math.round(avgCcu * 18 * monet) : null;
+    g.rev = avgCcu ? Math.round((g.revLow + g.revHigh) / 2) : null;
+    g.members = g.grp ? g.grp.m : null;
+    g.passes = g.gp ? g.gp.n : null;
     let adj = 0;
+    if(g.cType === 'Group') { parts.push(['sc_group', 4, 0, false]); adj += 4; }
     if(g.tags.includes('flagship')) { parts.push(['sc_flagship', 8, 0, false]); adj += 8; }
     if(g.tags.includes('copycat')) { parts.push(['sc_copycat', -10, 0, false]); adj -= 10; }
     if(g.tags.includes('licensed-ip')) { parts.push(['sc_ip', -12, 0, false]); adj -= 12; }
@@ -692,7 +723,8 @@ function imgHtml(g, size){
 
 /* ---------- static text ---------- */
 const AGE_OPTS = [['', 'age_any'], ['30', 'age_30'], ['90', 'age_90'], ['365', 'age_365'], ['old', 'age_old']];
-const SORT_OPTS = ['playing_desc','playing_asc','score_desc','d7_desc','d30_desc','d1_desc','visits_desc','vpd_desc','like_desc','like_asc','favs_desc','upd_asc','age_asc','age_desc','name_asc'];
+const SORT_OPTS = ['playing_desc','playing_asc','score_desc','d7_desc','d30_desc','d1_desc','rev_desc','members_desc','visits_desc','vpd_desc','like_desc','like_asc','favs_desc','upd_asc','age_asc','age_desc','name_asc'];
+const OWNER_OPTS = [['', 'own_any'], ['Group', 'own_group'], ['User', 'own_user']];
 const TREND_OPTS = [['', 'trend_any'], ['rising', 'trend_rising'], ['falling', 'trend_falling'], ['flat', 'trend_flat'], ['new', 'trend_new']];
 const COLS = [
   {k:'score', h:'h_score', sort:'score'},
@@ -705,7 +737,10 @@ const COLS = [
   {k:'favs', h:'h_favs', sort:'favs'},
   {k:'vpd', h:'h_vpd', sort:'vpd'},
   {k:'upd', h:'h_upd', sort:'upd'},
-  {k:'age', h:'h_age', sort:'age'}
+  {k:'age', h:'h_age', sort:'age'},
+  {k:'rev', h:'h_rev', sort:'rev'},
+  {k:'members', h:'h_members', sort:'members'},
+  {k:'passes', h:'h_passes', sort:'passes'}
 ];
 function visibleCols(){ return COLS.filter(c => c.always || settings.cols[c.k]); }
 
@@ -721,6 +756,9 @@ function applyLanguage(){
   const sort = document.getElementById('sortSelect');
   sort.innerHTML = SORT_OPTS.map(v => `<option value="${v}">${t('sort_'+v)}</option>`).join('');
   sort.value = SORT_OPTS.includes(state.sort) ? state.sort : '';
+  const owner = document.getElementById('ownerSelect');
+  owner.innerHTML = OWNER_OPTS.map(([v,k]) => `<option value="${v}">${t(k)}</option>`).join('');
+  owner.value = state.owner;
   const trend = document.getElementById('trendSelect');
   trend.innerHTML = TREND_OPTS.map(([v,k]) => `<option value="${v}">${t(k)}</option>`).join('');
   trend.value = state.trend;
@@ -750,7 +788,7 @@ function buildTableHead(){
     <th class="sortable" data-k="name">${t('h_game')}</th><th>${t('h_cat')}</th><th>${t('h_signals')}</th>${cols}</tr>`;
   document.querySelectorAll('thead th.sortable').forEach(th => th.addEventListener('click', () => {
     const k = th.dataset.k;
-    const def = {playing:'desc', visits:'desc', like:'desc', favs:'desc', vpd:'desc', upd:'asc', age:'asc', name:'asc', score:'desc', d1:'desc', d7:'desc', d30:'desc'}[k];
+    const def = {playing:'desc', visits:'desc', like:'desc', favs:'desc', vpd:'desc', upd:'asc', age:'asc', name:'asc', score:'desc', d1:'desc', d7:'desc', d30:'desc', rev:'desc', members:'desc', passes:'desc'}[k];
     const [cf, cd] = state.sort.split('_');
     state.sort = `${k}_${cf === k ? (cd === 'desc' ? 'asc' : 'desc') : def}`;
     const sel = document.getElementById('sortSelect');
@@ -785,6 +823,7 @@ function applyFilters(){
   }
   if(state.tags.size) rows = rows.filter(g => [...state.tags].every(x => g.tags.includes(x)));
   if(state.trend) rows = rows.filter(g => g.trend === state.trend);
+  if(state.owner) rows = rows.filter(g => g.cType === state.owner);
   if(settings.hideAuto) rows = rows.filter(g => g.src === 'review');
   const [field, dir] = state.sort.split('_');
   return [...rows].sort((a,b) => {
@@ -804,6 +843,9 @@ function cellHtml(g, c){
     case 'd1': return `<td class="num">${deltaHtml(g.d1)}</td>`;
     case 'd7': return `<td class="num">${deltaHtml(g.d7)}</td>`;
     case 'd30': return `<td class="num">${deltaHtml(g.d30)}</td>`;
+    case 'rev': return `<td class="num">${g.rev != null ? '$' + fmtNum(g.rev) : '—'}</td>`;
+    case 'members': return `<td class="num">${g.members != null ? fmtTable(g.members) : '—'}</td>`;
+    case 'passes': return `<td class="num">${g.passes != null ? g.passes : '—'}</td>`;
     case 'rating': return `<td class="rating ${ratingClass(g.like)}">${g.like != null ? g.like+'%' : '—'}</td>`;
     case 'players': return `<td class="num">${fmtTable(g.playing)}</td>`;
     case 'visits': return `<td class="num">${fmtTable(g.visits)}</td>`;
@@ -1081,6 +1123,23 @@ function openModal(idx, rangeKey){
         ${g.scoreParts.some(p => p[3]) ? `<div class="hint" style="margin-top:8px;font-size:11px;color:var(--text-faint)">* ${t('sc_noHist')}</div>` : ''}
       </div>
 
+      <div class="score-box" id="bizBox">
+        <div class="score-head"><div><div class="t">${t('bz_title')}</div><div class="hint">${t('bz_hint')}</div></div></div>
+        <div class="score-parts">
+          <div class="score-part"><span>${t('bz_owner')}</span><b>${g.cType === 'Group' ? t('bz_group') : g.cType === 'User' ? t('bz_user') : '—'}</b></div>
+          ${g.grp ? `<div class="score-part"><span>${t('bz_members')}</span><b>${fmtFull(g.grp.m)}${g.grp.v ? ' ✓' : ''}</b></div>
+          <div class="score-part"><span>${t('bz_groupAge')}</span><b>${esc(g.grp.c || '—')}</b></div>` : ''}
+          ${g.gp ? `<div class="score-part"><span>${t('bz_passes')}</span><b>${g.gp.n}</b></div>
+          <div class="score-part"><span>${t('bz_priceRange')}</span><b>${g.gp.min != null ? fmtFull(g.gp.min) + '–' + fmtFull(g.gp.max) + ' R$' : '—'}</b></div>` : ''}
+          ${g.vip != null ? `<div class="score-part"><span>${t('bz_vip')}</span><b>${g.vip ? t('bz_yes') : t('bz_no')}</b></div>` : ''}
+          ${g.paid != null ? `<div class="score-part"><span>${t('bz_paid')}</span><b>${g.paid ? fmtFull(g.paid) + ' R$' : t('bz_no')}</b></div>` : ''}
+          <div class="score-part"><span>${t('bz_dau')}</span><b>${g.dau != null ? '~' + fmtFull(g.dau) : '—'}</b></div>
+          <div class="score-part"><span>${t('bz_rev')}</span><b class="${g.rev ? 'pos' : ''}">${g.rev != null ? '$' + fmtFull(g.revLow) + '–' + fmtFull(g.revHigh) + ' ' + t('bz_perMonth') : '—'}</b></div>
+          <div class="score-part"><span>${t('bz_val')}</span><b>${g.rev != null ? '$' + fmtNum(g.revLow * 12) + '–' + fmtNum(g.revHigh * 24) : '—'}</b></div>
+        </div>
+        <div class="hint" style="margin-top:8px;font-size:11px;color:var(--text-faint);line-height:1.5">${g.enrichedAt ? t('bz_note') : t('bz_pending') + ' ' + t('bz_note')}</div>
+      </div>
+
       <div class="chart-box" id="chartBox"></div>
       <div class="links-row">
         <a class="link-btn primary" href="https://www.roblox.com/games/${g.place}" target="_blank" rel="noopener">${t('openRoblox')}</a>
@@ -1145,6 +1204,7 @@ document.getElementById('search').addEventListener('input', e => { state.search 
 document.getElementById('catSelect').addEventListener('change', e => { state.cat = e.target.value; state.shown = PAGE; render(); });
 document.getElementById('ageSelect').addEventListener('change', e => { state.age = e.target.value; state.shown = PAGE; render(); });
 document.getElementById('trendSelect').addEventListener('change', e => { state.trend = e.target.value; state.shown = PAGE; render(); });
+document.getElementById('ownerSelect').addEventListener('change', e => { state.owner = e.target.value; state.shown = PAGE; render(); });
 document.getElementById('sortSelect').addEventListener('change', e => { if(e.target.value){ state.sort = e.target.value; state.shown = PAGE; render(); } });
 document.getElementById('moreBtn').addEventListener('click', () => { state.shown += PAGE; render(); });
 document.getElementById('clearBtn').addEventListener('click', () => {
@@ -1153,6 +1213,7 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   document.getElementById('catSelect').value = '';
   document.getElementById('ageSelect').value = '';
   document.getElementById('trendSelect').value = '';
+  document.getElementById('ownerSelect').value = '';
   document.getElementById('sortSelect').value = 'playing_desc';
   render();
 });
@@ -1235,6 +1296,7 @@ function renderMarket(){
     document.getElementById('catSelect').value = state.cat;
     document.getElementById('ageSelect').value = '';
     document.getElementById('trendSelect').value = '';
+    document.getElementById('ownerSelect').value = '';
     document.getElementById('sortSelect').value = 'playing_desc';
     setView('games');
     render();

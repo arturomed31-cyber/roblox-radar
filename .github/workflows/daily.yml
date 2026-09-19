@@ -45,6 +45,10 @@ jobs:
         env:
           ROBLOX_COOKIE: ${{ secrets.ROBLOX_COOKIE }}
 
+      - name: Owner groups and monetization (weekly per game)
+        run: python scripts/enrich.py --max-age 7
+        continue-on-error: true
+
       - name: Commit updated data
         run: |
           git config user.name "roblox-radar bot"
