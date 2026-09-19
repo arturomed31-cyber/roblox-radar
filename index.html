@@ -217,6 +217,47 @@ td{padding:8px 12px;font-size:13px;vertical-align:middle;}
 .col-chips .chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-text);}
 .settings-body{max-height:85vh;overflow-y:auto;}
 
+/* ---------- views, trends, score, market ---------- */
+.view-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;}
+.view-switch{display:flex;gap:2px;background:var(--panel-3);border-radius:8px;padding:2px;}
+.view-switch button{font-family:inherit;font-size:12.5px;font-weight:600;padding:6px 14px;border-radius:6px;border:none;background:transparent;color:var(--text-dim);cursor:pointer;}
+.view-switch button.on{background:var(--panel);color:var(--accent);}
+.view-switch button:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+.delta{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;}
+.delta.up{color:var(--good);} .delta.down{color:var(--risk);} .delta.flat{color:var(--text-dim);} .delta.na{color:var(--text-faint);}
+.score-pill{display:inline-block;min-width:38px;text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;padding:3px 7px;border-radius:6px;border:1px solid transparent;}
+.score-pill.s4{background:color-mix(in srgb,var(--good) 18%,transparent);color:var(--good);border-color:color-mix(in srgb,var(--good) 35%,transparent);}
+.score-pill.s3{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 32%,transparent);}
+.score-pill.s2{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 32%,transparent);}
+.score-pill.s1{background:color-mix(in srgb,var(--risk) 14%,transparent);color:var(--risk);border-color:color-mix(in srgb,var(--risk) 30%,transparent);}
+.trend-badge{font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:2px 7px;border-radius:5px;white-space:nowrap;}
+.trend-badge.rising{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good);}
+.trend-badge.falling{background:color-mix(in srgb,var(--risk) 16%,transparent);color:var(--risk);}
+.trend-badge.flat{background:var(--chip);color:var(--text-dim);}
+.trend-badge.new{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);}
+.score-box{border:1px solid var(--border);border-radius:10px;padding:13px 14px;margin-bottom:18px;background:var(--panel-2);}
+.score-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px;}
+.score-big{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:38px;line-height:1;}
+.score-head .t{font-size:12px;font-weight:600;}
+.score-head .hint{font-size:11px;color:var(--text-faint);}
+.score-parts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 18px;}
+.score-part{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;font-family:'IBM Plex Mono',monospace;color:var(--text-dim);border-bottom:1px dashed var(--border);padding:4px 0;}
+.score-part b{color:var(--text);font-variant-numeric:tabular-nums;}
+.score-part b.neg{color:var(--risk);} .score-part b.pos{color:var(--good);}
+.trend-row{display:flex;flex-wrap:wrap;gap:14px 22px;margin-bottom:16px;}
+.trend-row div{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-dim);}
+.trend-row b{font-variant-numeric:tabular-nums;}
+.market-wrap{border:1px solid var(--border);border-radius:10px;overflow:auto;background:var(--panel);}
+.market-wrap table{min-width:820px;}
+.market-wrap tbody tr{cursor:pointer;}
+.market-name{font-weight:600;}
+.market-sub{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-faint);}
+.bar{position:relative;height:6px;background:var(--panel-3);border-radius:3px;min-width:70px;overflow:hidden;}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:3px;}
+.market-note{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-faint);margin:10px 0 0;line-height:1.6;}
+.market-group{padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-faint);background:var(--panel-2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+#gamesView[hidden],#marketView[hidden]{display:none;}
+
 footer{margin-top:20px;font-size:11.5px;color:var(--text-faint);font-family:'IBM Plex Mono',monospace;line-height:1.7;max-width:100ch;}
 
 @media (max-width:640px){
@@ -249,23 +290,46 @@ footer{margin-top:20px;font-size:11.5px;color:var(--text-faint);font-family:'IBM
   <div class="section-label" data-i18n="signalsLabel"></div>
   <div class="signals" id="signals"></div>
 
-  <div class="controls">
-    <input id="search" type="text" data-i18n-placeholder="searchPh" aria-label="Search games">
-    <select id="catSelect" aria-label="Filter by category"></select>
-    <select id="ageSelect" aria-label="Filter by age"></select>
-    <select id="sortSelect" aria-label="Sort games"></select>
-    <button class="clear-btn" id="clearBtn" type="button" data-i18n="reset"></button>
+  <div class="view-row">
+    <div class="view-switch" role="tablist">
+      <button type="button" data-view="games" class="on" data-i18n="v_games"></button>
+      <button type="button" data-view="market" data-i18n="v_market"></button>
+    </div>
+    <span class="market-sub" id="trendCoverage"></span>
   </div>
 
-  <div class="chipbar" id="tagChips"></div>
-  <div class="count-row" id="countRow"></div>
+  <div id="gamesView">
+    <div class="controls">
+      <input id="search" type="text" data-i18n-placeholder="searchPh" aria-label="Search games">
+      <select id="catSelect" aria-label="Filter by category"></select>
+      <select id="ageSelect" aria-label="Filter by age"></select>
+      <select id="trendSelect" aria-label="Filter by trend"></select>
+      <select id="sortSelect" aria-label="Sort games"></select>
+      <button class="clear-btn" id="clearBtn" type="button" data-i18n="reset"></button>
+    </div>
 
-  <div class="table-scroll">
-    <table>
-      <thead id="thead"></thead>
-      <tbody id="tbody"></tbody>
-    </table>
-    <div class="more-row" id="moreRow" hidden><button class="more-btn" id="moreBtn" type="button"></button></div>
+    <div class="chipbar" id="tagChips"></div>
+    <div class="count-row" id="countRow"></div>
+
+    <div class="table-scroll">
+      <table>
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="more-row" id="moreRow" hidden><button class="more-btn" id="moreBtn" type="button"></button></div>
+    </div>
+  </div>
+
+  <div id="marketView" hidden>
+    <div class="controls">
+      <div class="seg" id="marketBy">
+        <button type="button" data-v="tags" class="on" data-i18n="m_byTags"></button>
+        <button type="button" data-v="cats" data-i18n="m_byCats"></button>
+      </div>
+      <span class="market-sub" data-i18n="m_hint"></span>
+    </div>
+    <div class="market-wrap"><table><thead id="mhead"></thead><tbody id="mbody"></tbody></table></div>
+    <div class="market-note" data-i18n="m_note"></div>
   </div>
 
   <footer id="footerNote"></footer>
@@ -399,6 +463,20 @@ const I18N = {
     s_hideauto: "Hide auto-classified games", s_hideauto_h: "Show only games whose category was hand-reviewed",
     s_tz: "Chart time", s_tz_h: "Time zone for the player-history axis", tz_local: "Local",
     s_saved: "Saved in this browser only.", s_reset: "Reset to defaults",
+    v_games: "Games", v_market: "Market", m_byTags: "By pattern", m_byCats: "By category",
+    m_hint: "Click a row to see its games", m_note: "Share = percentage of all tracked concurrent players. New 30d / 90d = games in the group launched in that window. Median players and rating describe the typical game in the group, not the biggest. 7d growth is the median change per game and only appears once a week of history exists.",
+    m_group: "Group", m_games: "Games", m_players: "Players now", m_share: "Share", m_new30: "New 30d", m_new90: "New 90d", m_median: "Median players", m_rating: "Median rating", m_d7: "7d growth", m_score: "Avg score",
+    m_all: "All tracked games",
+    trend_any: "Any trend", trend_rising: "Rising", trend_falling: "Falling", trend_flat: "Stable", trend_new: "New (< 30 days)",
+    tb_rising: "rising", tb_falling: "falling", tb_flat: "stable", tb_new: "new",
+    h_d1: "24h", h_d7: "7d", h_d30: "30d", h_score: "Score",
+    sort_score_desc: "Opportunity score ↓", sort_d7_desc: "7d growth ↓", sort_d30_desc: "30d growth ↓", sort_d1_desc: "24h change ↓",
+    st_d1: "24h change", st_d7: "7d change", st_d30: "30d change",
+    sc_title: "Opportunity score", sc_hint: "0–100 · momentum, rating, scale and freshness, minus copy/IP risks. A research shortlist, not advice.",
+    sc_momentum: "Momentum (growth)", sc_rating: "Rating", sc_scale: "Scale (players)", sc_fresh: "Freshness (age)", sc_engage: "Engagement (visits/day)",
+    sc_flagship: "Original flagship bonus", sc_copycat: "Copy of another hit", sc_ip: "Borrowed IP risk", sc_pattern: "Saturated formula", sc_auto: "Not hand-reviewed",
+    sc_noHist: "no growth data yet — momentum counted as neutral",
+    coverage: (d, n) => `trend data: ${n} readings over ${d} days · 7d/30d columns fill in as history accumulates`,
     cats: {sim:'Simulator / Idle', rp:'Roleplay', shooter:'Shooter', fight:'Fighting / PvP', action:'Open-world action', obby:'Obby / Platformer', sports:'Sports & Racing', rpg:'RPG / Adventure', horror:'Horror / Survival', party:'Party / Casual', strategy:'Strategy / TD', sandbox:'Sandbox / Building', fangame:'Fan game', other:'Tool / Other'},
     tags: {'brainrot':'Brainrot','mm2-clone':'MM2 clone','mm2-original':'MM2 (the original)','minecraft-clone':'Minecraft-derived','tower':'Tower climb','tower-defense':'Tower defense','steal-pattern':'"Steal a X" formula','plus1-pattern':'"+1 per click" formula','duels-pattern':'"DUELS" arena formula','rng-gacha':'RNG / gacha loop','copycat':'Copy of another hit','licensed-ip':'Borrowed IP','flagship':'Original flagship','anime':'Anime','meme':'Meme premise'},
     signals: {'brainrot':'Brainrot themed','mm2-clone':'MM2 clones','minecraft-clone':'Minecraft-derived','tower':'Tower climbers','steal-pattern':'"Steal a X" formula','plus1-pattern':'"+1 per click" formula','duels-pattern':'"DUELS" arenas','copycat':'Copies of other hits','licensed-ip':'Borrowed IP','flagship':'Original flagships'},
@@ -443,6 +521,20 @@ const I18N = {
     s_hideauto: "Ocultar juegos clasificados automáticamente", s_hideauto_h: "Mostrar solo juegos con categoría revisada a mano",
     s_tz: "Hora de la gráfica", s_tz_h: "Zona horaria del eje de la gráfica", tz_local: "Local",
     s_saved: "Se guarda solo en este navegador.", s_reset: "Restablecer",
+    v_games: "Juegos", v_market: "Mercado", m_byTags: "Por patrón", m_byCats: "Por categoría",
+    m_hint: "Clic en una fila para ver sus juegos", m_note: "Cuota = porcentaje de todos los jugadores concurrentes seguidos. Nuevos 30d / 90d = juegos del grupo lanzados en esa ventana. Mediana de jugadores y valoración describen al juego típico del grupo, no al más grande. El crecimiento 7d es la mediana por juego y solo aparece cuando hay una semana de historial.",
+    m_group: "Grupo", m_games: "Juegos", m_players: "Jugadores ahora", m_share: "Cuota", m_new30: "Nuevos 30d", m_new90: "Nuevos 90d", m_median: "Mediana jugadores", m_rating: "Valoración mediana", m_d7: "Crec. 7d", m_score: "Puntaje medio",
+    m_all: "Todos los juegos seguidos",
+    trend_any: "Cualquier tendencia", trend_rising: "Subiendo", trend_falling: "Bajando", trend_flat: "Estable", trend_new: "Nuevo (< 30 días)",
+    tb_rising: "subiendo", tb_falling: "bajando", tb_flat: "estable", tb_new: "nuevo",
+    h_d1: "24h", h_d7: "7d", h_d30: "30d", h_score: "Puntaje",
+    sort_score_desc: "Puntaje de oportunidad ↓", sort_d7_desc: "Crecimiento 7d ↓", sort_d30_desc: "Crecimiento 30d ↓", sort_d1_desc: "Cambio 24h ↓",
+    st_d1: "Cambio 24h", st_d7: "Cambio 7d", st_d30: "Cambio 30d",
+    sc_title: "Puntaje de oportunidad", sc_hint: "0–100 · impulso, valoración, escala y frescura, menos riesgos de copia/IP. Una lista para investigar, no un consejo.",
+    sc_momentum: "Impulso (crecimiento)", sc_rating: "Valoración", sc_scale: "Escala (jugadores)", sc_fresh: "Frescura (edad)", sc_engage: "Tracción (visitas/día)",
+    sc_flagship: "Bono original insignia", sc_copycat: "Copia de otro éxito", sc_ip: "Riesgo de IP prestada", sc_pattern: "Fórmula saturada", sc_auto: "Sin revisar a mano",
+    sc_noHist: "aún sin datos de crecimiento — impulso contado como neutro",
+    coverage: (d, n) => `datos de tendencia: ${n} lecturas en ${d} días · las columnas 7d/30d se llenan al acumular historial`,
     cats: {sim:'Simulador / Idle', rp:'Roleplay', shooter:'Shooter', fight:'Lucha / PvP', action:'Acción mundo abierto', obby:'Obby / Plataformas', sports:'Deportes y carreras', rpg:'RPG / Aventura', horror:'Terror / Supervivencia', party:'Fiesta / Casual', strategy:'Estrategia / TD', sandbox:'Sandbox / Construcción', fangame:'Fan game', other:'Herramienta / Otro'},
     tags: {'brainrot':'Brainrot','mm2-clone':'Clon de MM2','mm2-original':'MM2 (el original)','minecraft-clone':'Derivado de Minecraft','tower':'Torre','tower-defense':'Tower defense','steal-pattern':'Fórmula "Steal a X"','plus1-pattern':'Fórmula "+1 por clic"','duels-pattern':'Fórmula "DUELS"','rng-gacha':'Bucle RNG / gacha','copycat':'Copia de otro éxito','licensed-ip':'IP prestada','flagship':'Original insignia','anime':'Anime','meme':'Premisa meme'},
     signals: {'brainrot':'Temática brainrot','mm2-clone':'Clones de MM2','minecraft-clone':'Derivados de Minecraft','tower':'Torres','steal-pattern':'Fórmula "Steal a X"','plus1-pattern':'Fórmula "+1 por clic"','duels-pattern':'Arenas "DUELS"','copycat':'Copias de otros éxitos','licensed-ip':'IP prestada','flagship':'Originales insignia'},
@@ -467,7 +559,7 @@ const DEFAULT_SETTINGS = {
   lang: (navigator.language || 'en').toLowerCase().startsWith('es') ? 'es' : 'en',
   theme:'system', numbers:'compact', rows:'150', hideAuto:false, tz:'local',
   minPlayers:'0', rememberFilters:false,
-  cols:{rating:true, visits:true, age:true, favs:false, vpd:false, upd:false}
+  cols:{score:true, d7:true, d30:false, d1:false, rating:true, visits:true, age:true, favs:false, vpd:false, upd:false}
 };
 let settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
 try {
@@ -484,19 +576,20 @@ function applyTheme(){
 }
 applyTheme();
 
-const defaultState = () => ({search:'', cat:'', age:'', tags:new Set(), sort:'playing_desc', shown:PAGE});
+const defaultState = () => ({search:'', cat:'', age:'', trend:'', tags:new Set(), sort:'playing_desc', shown:PAGE});
 let state = defaultState();
+let view = 'games', marketBy = 'tags';
 
 function saveFilters(){
   if(!settings.rememberFilters) return;
-  try { localStorage.setItem(FILTERS_KEY, JSON.stringify({search:state.search, cat:state.cat, age:state.age, tags:[...state.tags], sort:state.sort})); } catch (e) {}
+  try { localStorage.setItem(FILTERS_KEY, JSON.stringify({search:state.search, cat:state.cat, age:state.age, trend:state.trend, tags:[...state.tags], sort:state.sort})); } catch (e) {}
 }
 function loadFilters(){
   if(!settings.rememberFilters) return;
   try {
     const f = JSON.parse(localStorage.getItem(FILTERS_KEY) || 'null');
     if(!f) return;
-    state.search = f.search || ''; state.cat = f.cat || ''; state.age = f.age || '';
+    state.search = f.search || ''; state.cat = f.cat || ''; state.age = f.age || ''; state.trend = f.trend || '';
     state.tags = new Set(f.tags || []); state.sort = f.sort || 'playing_desc';
   } catch (e) {}
 }
@@ -505,7 +598,70 @@ function indexGames(){
   GAMES.forEach((g,i) => { g._i = i; });
   [...GAMES].sort((a,b)=>(b.playing||0)-(a.playing||0)).forEach((g,i)=>{ g._rank = i+1; });
   SAMPLE_MS = SAMPLE_TIMES.map(x => new Date(x).getTime());
+  computeMetrics();
 }
+
+/* ---------- trends + opportunity score ---------- */
+const SATURATED = ['plus1-pattern','steal-pattern','duels-pattern'];
+function changeOver(series, days){
+  // % change between the latest reading and a reading ~`days` ago taken at a similar
+  // time of day (±3h), so a Friday-night vs Saturday-afternoon pair never counts as growth.
+  if(series.length < 2) return null;
+  const last = series[series.length-1];
+  const target = last.t - days*86400e3, minBack = last.t - days*86400e3*0.7;
+  const tod = ms => ms % 86400e3;
+  const todDiff = (a, b) => { const d = Math.abs(tod(a) - tod(b)); return Math.min(d, 86400e3 - d); };
+  let best = null;
+  for(const p of series){
+    if(p.t > minBack) break;
+    if(todDiff(p.t, last.t) > 3*3600e3) continue;
+    if(!best || Math.abs(p.t - target) < Math.abs(best.t - target)) best = p;
+  }
+  if(!best || !best.v) return null;
+  return (last.v - best.v) / best.v * 100;
+}
+const clamp01 = v => Math.max(0, Math.min(1, v));
+function computeMetrics(){
+  const maxLog = Math.log10(300000), minLog = Math.log10(200);
+  GAMES.forEach(g => {
+    const s = seriesFor(g);
+    g.d1 = changeOver(s, 1); g.d7 = changeOver(s, 7); g.d30 = changeOver(s, 30);
+    const mom = g.d7;
+    g.trend = g.age != null && g.age < 30 ? 'new' : mom == null ? null : mom >= 15 ? 'rising' : mom <= -15 ? 'falling' : 'flat';
+
+    const parts = [];
+    const momScore = mom == null ? 0.5 : clamp01((mom + 50) / 100);       // -50%..+50% -> 0..1
+    parts.push(['sc_momentum', Math.round(momScore * 35), 35, mom == null]);
+    parts.push(['sc_rating', g.like == null ? 8 : Math.round(clamp01((g.like - 70) / 27) * 20), 20, false]);
+    const sc = g.playing ? clamp01((Math.log10(g.playing) - minLog) / (maxLog - minLog)) : 0;
+    parts.push(['sc_scale', Math.round(sc * 15), 15, false]);
+    const fresh = g.age == null ? 0.3 : g.age < 60 ? 1 : g.age < 180 ? 0.8 : g.age < 365 ? 0.55 : g.age < 730 ? 0.35 : 0.2;
+    parts.push(['sc_fresh', Math.round(fresh * 15), 15, false]);
+    const eng = g.vpd && g.playing ? clamp01((g.vpd / g.playing - 5) / 60) : 0.3;
+    parts.push(['sc_engage', Math.round(eng * 15), 15, false]);
+    let adj = 0;
+    if(g.tags.includes('flagship')) { parts.push(['sc_flagship', 8, 0, false]); adj += 8; }
+    if(g.tags.includes('copycat')) { parts.push(['sc_copycat', -10, 0, false]); adj -= 10; }
+    if(g.tags.includes('licensed-ip')) { parts.push(['sc_ip', -12, 0, false]); adj -= 12; }
+    if(g.tags.some(x => SATURATED.includes(x))) { parts.push(['sc_pattern', -8, 0, false]); adj -= 8; }
+    if(g.src !== 'review') { parts.push(['sc_auto', -3, 0, false]); adj -= 3; }
+    const base = parts.filter(p => p[2] > 0).reduce((a,p) => a + p[1], 0);
+    g.score = Math.max(0, Math.min(100, base + adj));
+    g.scoreParts = parts;
+  });
+}
+function scoreClass(s){ return s >= 70 ? 's4' : s >= 55 ? 's3' : s >= 40 ? 's2' : 's1'; }
+function fmtPct(v){
+  if(v == null) return '—';
+  const r = Math.round(v);
+  return (r > 0 ? '+' : '') + r + '%';
+}
+function deltaHtml(v){
+  if(v == null) return `<span class="delta na">—</span>`;
+  const cls = v >= 15 ? 'up' : v <= -15 ? 'down' : 'flat';
+  return `<span class="delta ${cls}">${fmtPct(v)}</span>`;
+}
+function trendBadge(tr){ return tr ? `<span class="trend-badge ${tr}">${t('tb_'+tr)}</span>` : ''; }
 
 /* ---------- formatting ---------- */
 function fmtNum(n){
@@ -536,8 +692,13 @@ function imgHtml(g, size){
 
 /* ---------- static text ---------- */
 const AGE_OPTS = [['', 'age_any'], ['30', 'age_30'], ['90', 'age_90'], ['365', 'age_365'], ['old', 'age_old']];
-const SORT_OPTS = ['playing_desc','playing_asc','visits_desc','vpd_desc','like_desc','like_asc','favs_desc','upd_asc','age_asc','age_desc','name_asc'];
+const SORT_OPTS = ['playing_desc','playing_asc','score_desc','d7_desc','d30_desc','d1_desc','visits_desc','vpd_desc','like_desc','like_asc','favs_desc','upd_asc','age_asc','age_desc','name_asc'];
+const TREND_OPTS = [['', 'trend_any'], ['rising', 'trend_rising'], ['falling', 'trend_falling'], ['flat', 'trend_flat'], ['new', 'trend_new']];
 const COLS = [
+  {k:'score', h:'h_score', sort:'score'},
+  {k:'d1', h:'h_d1', sort:'d1'},
+  {k:'d7', h:'h_d7', sort:'d7'},
+  {k:'d30', h:'h_d30', sort:'d30'},
   {k:'rating', h:'h_rating', sort:'like'},
   {k:'players', h:'h_players', sort:'playing', always:true},
   {k:'visits', h:'h_visits', sort:'visits'},
@@ -560,6 +721,9 @@ function applyLanguage(){
   const sort = document.getElementById('sortSelect');
   sort.innerHTML = SORT_OPTS.map(v => `<option value="${v}">${t('sort_'+v)}</option>`).join('');
   sort.value = SORT_OPTS.includes(state.sort) ? state.sort : '';
+  const trend = document.getElementById('trendSelect');
+  trend.innerHTML = TREND_OPTS.map(([v,k]) => `<option value="${v}">${t(k)}</option>`).join('');
+  trend.value = state.trend;
   document.getElementById('search').value = state.search;
 
   buildCatSelect();
@@ -571,7 +735,10 @@ function applyLanguage(){
     const scanned = new Date(DATA.generated).toISOString().slice(0,16).replace('T',' ');
     document.getElementById('scanMeta').innerHTML = t('tracked')(GAMES.length, fmtNum(totalPlayers)) + '<br>' + t('lastRefresh')(scanned);
     document.getElementById('footerNote').textContent = t('footer');
+    const days = SAMPLE_MS.length > 1 ? Math.max(1, Math.round((SAMPLE_MS[SAMPLE_MS.length-1] - SAMPLE_MS[0]) / 86400e3)) : 0;
+    document.getElementById('trendCoverage').textContent = t('coverage')(days, SAMPLE_MS.length);
     render();
+    renderMarket();
     if(currentGame) openModal(currentGame._i, currentRange);
   }
 }
@@ -583,7 +750,7 @@ function buildTableHead(){
     <th class="sortable" data-k="name">${t('h_game')}</th><th>${t('h_cat')}</th><th>${t('h_signals')}</th>${cols}</tr>`;
   document.querySelectorAll('thead th.sortable').forEach(th => th.addEventListener('click', () => {
     const k = th.dataset.k;
-    const def = {playing:'desc', visits:'desc', like:'desc', favs:'desc', vpd:'desc', upd:'asc', age:'asc', name:'asc'}[k];
+    const def = {playing:'desc', visits:'desc', like:'desc', favs:'desc', vpd:'desc', upd:'asc', age:'asc', name:'asc', score:'desc', d1:'desc', d7:'desc', d30:'desc'}[k];
     const [cf, cd] = state.sort.split('_');
     state.sort = `${k}_${cf === k ? (cd === 'desc' ? 'asc' : 'desc') : def}`;
     const sel = document.getElementById('sortSelect');
@@ -617,6 +784,7 @@ function applyFilters(){
       : rows.filter(g => g.age != null && g.age < Number(state.age));
   }
   if(state.tags.size) rows = rows.filter(g => [...state.tags].every(x => g.tags.includes(x)));
+  if(state.trend) rows = rows.filter(g => g.trend === state.trend);
   if(settings.hideAuto) rows = rows.filter(g => g.src === 'review');
   const [field, dir] = state.sort.split('_');
   return [...rows].sort((a,b) => {
@@ -632,6 +800,10 @@ function applyFilters(){
 
 function cellHtml(g, c){
   switch(c.k){
+    case 'score': return `<td class="num"><span class="score-pill ${scoreClass(g.score)}">${g.score}</span></td>`;
+    case 'd1': return `<td class="num">${deltaHtml(g.d1)}</td>`;
+    case 'd7': return `<td class="num">${deltaHtml(g.d7)}</td>`;
+    case 'd30': return `<td class="num">${deltaHtml(g.d30)}</td>`;
     case 'rating': return `<td class="rating ${ratingClass(g.like)}">${g.like != null ? g.like+'%' : '—'}</td>`;
     case 'players': return `<td class="num">${fmtTable(g.playing)}</td>`;
     case 'visits': return `<td class="num">${fmtTable(g.visits)}</td>`;
@@ -650,7 +822,7 @@ function rowHtml(g){
       <button class="thumb-btn" data-open="${g._i}" title="${esc(t('openStats')(g.name))}" aria-label="${esc(t('openStats')(g.name))}">${imgHtml(g, 44)}</button>
       <div class="game-text">
         <button class="game-name" data-open="${g._i}">${esc(g.name)}</button>
-        <span class="creator">${t('by')} ${esc(g.creator || t('unknown'))}${g.verified ? ' ✓' : ''}</span>
+        <span class="creator">${t('by')} ${esc(g.creator || t('unknown'))}${g.verified ? ' ✓' : ''} ${trendBadge(g.trend)}</span>
       </div>
     </div></td>
     <td><span class="cat-pill" title="${reviewed ? t('reviewed') : t('autoTip')}">${catLabel(g.cat)}${reviewed ? '' : ` <span class="auto">${t('auto')}</span>`}</span></td>
@@ -892,6 +1064,23 @@ function openModal(idx, rangeKey){
       <div class="modal-creator">${t('by')} ${esc(g.creator || t('unknown'))}${g.verified ? ' ✓' : ''} · ${esc(g.genre || '')} · ${t('classifiedAs')} ${catLabel(g.cat)}${g.src === 'review' ? '' : ' ' + t('autoNote')}${g.added ? ` · ${t('added')} ${esc(g.added)}` : ''}</div>
       <div class="modal-tags">${g.tags.length ? g.tags.map(tagHtml).join('') : `<span class="tag none">${t('noTag')}</span>`}</div>
       <div class="stat-grid">${stats.map(([k,v]) => `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('')}</div>
+
+      <div class="score-box">
+        <div class="score-head">
+          <span class="score-pill ${scoreClass(g.score)} score-big" style="padding:6px 14px">${g.score}</span>
+          <div><div class="t">${t('sc_title')} ${trendBadge(g.trend)}</div><div class="hint">${t('sc_hint')}</div></div>
+        </div>
+        <div class="trend-row">
+          <div>${t('st_d1')} <b>${deltaHtml(g.d1)}</b></div>
+          <div>${t('st_d7')} <b>${deltaHtml(g.d7)}</b></div>
+          <div>${t('st_d30')} <b>${deltaHtml(g.d30)}</b></div>
+        </div>
+        <div class="score-parts">
+          ${g.scoreParts.map(([k, pts, max, na]) => `<div class="score-part"><span>${t(k)}${na ? ' *' : ''}</span><b class="${pts < 0 ? 'neg' : max === 0 && pts > 0 ? 'pos' : ''}">${pts > 0 && max === 0 ? '+' : ''}${pts}${max ? ' / ' + max : ''}</b></div>`).join('')}
+        </div>
+        ${g.scoreParts.some(p => p[3]) ? `<div class="hint" style="margin-top:8px;font-size:11px;color:var(--text-faint)">* ${t('sc_noHist')}</div>` : ''}
+      </div>
+
       <div class="chart-box" id="chartBox"></div>
       <div class="links-row">
         <a class="link-btn primary" href="https://www.roblox.com/games/${g.place}" target="_blank" rel="noopener">${t('openRoblox')}</a>
@@ -955,6 +1144,7 @@ function buildTagChips(){
 document.getElementById('search').addEventListener('input', e => { state.search = e.target.value; state.shown = PAGE; render(); });
 document.getElementById('catSelect').addEventListener('change', e => { state.cat = e.target.value; state.shown = PAGE; render(); });
 document.getElementById('ageSelect').addEventListener('change', e => { state.age = e.target.value; state.shown = PAGE; render(); });
+document.getElementById('trendSelect').addEventListener('change', e => { state.trend = e.target.value; state.shown = PAGE; render(); });
 document.getElementById('sortSelect').addEventListener('change', e => { if(e.target.value){ state.sort = e.target.value; state.shown = PAGE; render(); } });
 document.getElementById('moreBtn').addEventListener('click', () => { state.shown += PAGE; render(); });
 document.getElementById('clearBtn').addEventListener('click', () => {
@@ -962,9 +1152,95 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   document.getElementById('search').value = '';
   document.getElementById('catSelect').value = '';
   document.getElementById('ageSelect').value = '';
+  document.getElementById('trendSelect').value = '';
   document.getElementById('sortSelect').value = 'playing_desc';
   render();
 });
+
+/* ---------- views: games / market ---------- */
+function setView(v){
+  view = v;
+  document.querySelectorAll('.view-switch button').forEach(b => b.classList.toggle('on', b.dataset.view === v));
+  document.getElementById('gamesView').hidden = v !== 'games';
+  document.getElementById('marketView').hidden = v !== 'market';
+  if(v === 'market') renderMarket();
+}
+document.querySelectorAll('.view-switch button').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+document.querySelectorAll('#marketBy button').forEach(b => b.addEventListener('click', () => {
+  marketBy = b.dataset.v;
+  document.querySelectorAll('#marketBy button').forEach(x => x.classList.toggle('on', x === b));
+  renderMarket();
+}));
+
+function median(arr){
+  const a = arr.filter(v => v != null).sort((x,y) => x-y);
+  if(!a.length) return null;
+  const m = Math.floor(a.length/2);
+  return a.length % 2 ? a[m] : (a[m-1] + a[m]) / 2;
+}
+function marketGroups(){
+  const total = GAMES.reduce((s,g) => s + (g.playing||0), 0);
+  const groups = [];
+  const mk = (key, label, games, kind) => {
+    if(!games.length) return;
+    const players = games.reduce((s,g) => s + (g.playing||0), 0);
+    groups.push({
+      key, label, kind, n: games.length, players, share: total ? players/total*100 : 0,
+      new30: games.filter(g => g.age != null && g.age < 30).length,
+      new90: games.filter(g => g.age != null && g.age < 90).length,
+      medPlayers: median(games.map(g => g.playing)),
+      medRating: median(games.map(g => g.like)),
+      d7: median(games.map(g => g.d7)),
+      score: median(games.map(g => g.score))
+    });
+  };
+  if(marketBy === 'tags'){
+    const tags = [...new Set(GAMES.flatMap(g => g.tags))];
+    tags.forEach(k => mk(k, tagLabel(k), GAMES.filter(g => g.tags.includes(k)), 'tag'));
+    mk('__none', t('noTag'), GAMES.filter(g => !g.tags.length), 'none');
+  } else {
+    const cats = [...new Set(GAMES.map(g => g.cat))];
+    cats.forEach(c => mk(c, catLabel(c), GAMES.filter(g => g.cat === c), 'cat'));
+  }
+  groups.sort((a,b) => b.players - a.players);
+  return {groups, total};
+}
+function renderMarket(){
+  if(!GAMES.length) return;
+  const {groups, total} = marketGroups();
+  const maxShare = Math.max(...groups.map(g => g.share), 1);
+  document.getElementById('mhead').innerHTML = `<tr>
+    <th>${t('m_group')}</th><th style="text-align:right">${t('m_games')}</th><th style="text-align:right">${t('m_players')}</th>
+    <th>${t('m_share')}</th><th style="text-align:right">${t('m_new30')}</th><th style="text-align:right">${t('m_new90')}</th>
+    <th style="text-align:right">${t('m_median')}</th><th style="text-align:right">${t('m_rating')}</th>
+    <th style="text-align:right">${t('m_d7')}</th><th style="text-align:right">${t('m_score')}</th></tr>`;
+  const rows = groups.map(g => `<tr data-kind="${g.kind}" data-key="${esc(g.key)}">
+    <td><span class="market-name">${esc(g.label)}</span></td>
+    <td class="num">${g.n}</td>
+    <td class="num">${fmtTable(g.players)}</td>
+    <td><div class="bar" title="${g.share.toFixed(1)}%"><i style="width:${(g.share/maxShare*100).toFixed(1)}%"></i></div><span class="market-sub">${g.share.toFixed(1)}%</span></td>
+    <td class="num ${g.new30 ? 'age fresh' : 'age'}">${g.new30}</td>
+    <td class="num age">${g.new90}</td>
+    <td class="num">${g.medPlayers != null ? fmtTable(Math.round(g.medPlayers)) : '—'}</td>
+    <td class="rating ${ratingClass(g.medRating)}">${g.medRating != null ? Math.round(g.medRating)+'%' : '—'}</td>
+    <td class="num">${deltaHtml(g.d7)}</td>
+    <td class="num">${g.score != null ? `<span class="score-pill ${scoreClass(g.score)}">${Math.round(g.score)}</span>` : '—'}</td>
+  </tr>`).join('');
+  document.getElementById('mbody').innerHTML = `<tr><td colspan="10" class="market-group">${t('m_all')} · ${GAMES.length} · ${fmtTable(total)}</td></tr>` + rows;
+  document.querySelectorAll('#mbody tr[data-kind]').forEach(tr => tr.addEventListener('click', () => {
+    state = defaultState();
+    if(tr.dataset.kind === 'tag') state.tags = new Set([tr.dataset.key]);
+    else if(tr.dataset.kind === 'cat') state.cat = tr.dataset.key;
+    document.getElementById('search').value = '';
+    document.getElementById('catSelect').value = state.cat;
+    document.getElementById('ageSelect').value = '';
+    document.getElementById('trendSelect').value = '';
+    document.getElementById('sortSelect').value = 'playing_desc';
+    setView('games');
+    render();
+    window.scrollTo({top: document.getElementById('gamesView').offsetTop - 12, behavior: 'smooth'});
+  }));
+}
 
 /* ---------- settings panel ---------- */
 const settingsOverlay = document.getElementById('settingsOverlay');
