@@ -1,0 +1,68 @@
+name: Discover games (parallel sweep)
+
+on:
+  workflow_dispatch:
+    inputs:
+      min_players:
+        description: "Minimum concurrent players for new games"
+        default: "100"
+        required: false
+      pages:
+        description: "Max search pages per keyword"
+        default: "3"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: radar-data
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Sweep shard ${{ matrix.shard }} of 6
+        run: python scripts/discover.py --shard ${{ matrix.shard }}/6 --pages "${{ github.event.inputs.pages || '3' }}" --out candidates-${{ matrix.shard }}.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: candidates-${{ matrix.shard }}
+          path: candidates-${{ matrix.shard }}.json
+          retention-days: 1
+
+  merge:
+    needs: sweep
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          path: candidates
+      - name: Add new games
+        run: python scripts/discover.py --merge candidates --min-players "${{ github.event.inputs.min_players || '100' }}"
+      - name: Commit
+        run: |
+          git config user.name "roblox-radar bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/games.json data/history.json data/overrides.json
+          if git diff --cached --quiet; then
+            echo "nothing changed"
+          else
+            git commit -m "data: discovered games $(date -u +%Y-%m-%d)"
+            git pull --rebase -X theirs origin main
+            git push
+          fi

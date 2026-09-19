@@ -37,7 +37,7 @@ jobs:
 
       - name: Discover new games (1,000+ players)
         if: ${{ github.event.inputs.skip_discovery != 'true' }}
-        run: python scripts/discover.py --min-players "${{ github.event.inputs.min_players || '1000' }}" --pages "${{ github.event.inputs.pages || '2' }}"
+        run: python scripts/discover.py --min-players "${{ github.event.inputs.min_players || '1000' }}" --pages "${{ github.event.inputs.pages || '1' }}" --no-groups
         continue-on-error: true
 
       - name: Pull live stats from Roblox

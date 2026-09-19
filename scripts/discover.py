@@ -1,12 +1,23 @@
 """Discover Roblox games that are not tracked yet and add them to data/games.json.
 
-Sources: the four front-page chart sorts plus a keyword sweep of Roblox search.
-New games are classified with keyword rules (src = "rules") and any entry in
-data/overrides.json wins over the rules. Standard library only.
+Sources
+  charts   the four front-page chart sorts
+  search   a keyword sweep of Roblox search
+  groups   the public catalogue of every creator group/user already tracked
 
-    python scripts/discover.py --min-players 1000
+Modes
+  default            sweep everything in one process, then add the new games
+  --shard i/N --out  sweep only slice i of the keywords and groups (shard 0 also
+                     does the charts) and write the candidates to a JSON file —
+                     run N shards in parallel on separate runners
+  --merge DIR        read every candidates-*.json in DIR and add the new games
+  --apply-only       only apply data/overrides.json
+
+New games are classified with keyword rules (src = "rules"); any entry in
+data/overrides.json wins over the rules. Standard library only.
 """
 import argparse
+import glob
 import json
 import re
 import time
@@ -70,6 +81,7 @@ LICENSED_WORDS = ["naruto", "one piece", "dragon ball", "jujutsu kaisen", "demon
                   "skibidi", "mrbeast", "simpsons", "hello neighbor", "granny", "gorilla tag", "tesla"]
 
 
+# ---------------------------------------------------------------- http
 def get_json(url, tries=4):
     for attempt in range(tries):
         try:
@@ -78,10 +90,12 @@ def get_json(url, tries=4):
                 return json.loads(r.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
             if e.code == 429:
-                retry_after = e.headers.get("Retry-After")
-                wait = int(retry_after) if retry_after and retry_after.isdigit() else min(30, 5 * 2 ** attempt)
+                ra = e.headers.get("Retry-After")
+                wait = int(ra) if ra and ra.isdigit() else min(30, 5 * 2 ** attempt)
                 print(f"  429 rate limited, waiting {wait}s", flush=True)
                 time.sleep(wait)
+            elif e.code in (400, 404):
+                return None
             else:
                 time.sleep(min(20, 3 * 2 ** attempt))
         except Exception:
@@ -94,6 +108,68 @@ def batches(seq, size):
         yield seq[i:i + size]
 
 
+# ---------------------------------------------------------------- sources
+def sweep_charts(pool):
+    for s in SORTS:
+        d = get_json(f"https://apis.roblox.com/explore-api/v1/get-sort-content?sessionId=radar{int(time.time())}&sortId={s}&device=computer&country=us")
+        for g in (d or {}).get("games", []):
+            pool.setdefault(str(g["universeId"]), {"p": g.get("playerCount"), "m": g.get("contentMaturity"), "g": g.get("genreL1"), "src": "chart"})
+        time.sleep(PAUSE)
+    print(f"charts: pool {len(pool)}", flush=True)
+
+
+def sweep_keywords(pool, keywords, pages):
+    for i, kw in enumerate(keywords, 1):
+        token, before = "", len(pool)
+        for _ in range(pages):
+            url = ("https://apis.roblox.com/search-api/omni-search?searchQuery=" + urllib.parse.quote(kw)
+                   + f"&pageToken={token}&sessionId=radar{int(time.time())}&pageType=all")
+            d = get_json(url, tries=3)
+            if not d:
+                break
+            added = 0
+            for grp in d.get("searchResults", []):
+                if grp.get("contentGroupType") != "Game":
+                    continue
+                for g in grp.get("contents", []):
+                    uid = str(g.get("universeId") or "")
+                    if uid and uid not in pool:
+                        pool[uid] = {"p": g.get("playerCount"), "m": g.get("contentMaturity"), "g": None, "src": "search"}
+                        added += 1
+            token = d.get("nextPageToken") or ""
+            if not token or added == 0:      # adaptive: stop paging keywords that add nothing
+                break
+            time.sleep(0.4)
+        if i % 20 == 0:
+            print(f"  keywords {i}/{len(keywords)} -> pool {len(pool)}", flush=True)
+        time.sleep(0.3)
+
+
+def sweep_groups(pool, creators):
+    """creators: list of (type, id). Reads each creator's public catalogue."""
+    for i, (ctype, cid) in enumerate(creators, 1):
+        base = (f"https://games.roblox.com/v2/groups/{cid}/games?accessFilter=2&limit=100&sortOrder=Asc" if ctype == "Group"
+                else f"https://games.roblox.com/v2/users/{cid}/games?accessFilter=2&limit=50&sortOrder=Asc")
+        cursor, guard = "", 0
+        while guard < 5:
+            d = get_json(base + (f"&cursor={cursor}" if cursor else ""), tries=3)
+            if not d:
+                break
+            for g in d.get("data", []):
+                uid = str(g.get("id") or "")
+                if uid and uid not in pool:
+                    pool[uid] = {"p": None, "m": None, "g": None, "src": "creator"}
+            cursor = d.get("nextPageCursor") or ""
+            guard += 1
+            if not cursor:
+                break
+            time.sleep(0.4)
+        if i % 100 == 0:
+            print(f"  creators {i}/{len(creators)} -> pool {len(pool)}", flush=True)
+        time.sleep(0.5)
+
+
+# ---------------------------------------------------------------- classification
 def classify(name, desc, genre_l1):
     n = (name or "").lower()
     d = (desc or "").lower()
@@ -153,80 +229,30 @@ def socials(desc):
     return out
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--min-players", type=int, default=1000)
-    ap.add_argument("--pages", type=int, default=2, help="search pages per keyword")
-    ap.add_argument("--apply-only", action="store_true", help="only apply data/overrides.json, no discovery")
-    args = ap.parse_args()
-
-    games_doc = json.loads(GAMES.read_text(encoding="utf-8"))
-    history = json.loads(HISTORY.read_text(encoding="utf-8"))
-    overrides = {}
-    if OVERRIDES.exists():
-        for o in json.loads(OVERRIDES.read_text(encoding="utf-8")):
-            overrides[str(o["id"])] = o
+# ---------------------------------------------------------------- adding games
+def add_candidates(games_doc, history, overrides, pool, min_players):
     known = {str(g["id"]) for g in games_doc["games"]}
-
-    # hand corrections always win, also for games that are already tracked
-    fixed = 0
-    for g in games_doc["games"]:
-        o = overrides.get(str(g["id"]))
-        if o and (g.get("cat") != o["c"] or sorted(g.get("tags", [])) != sorted(o["t"]) or g.get("src") != "review"):
-            g["cat"], g["tags"], g["src"] = o["c"], list(o["t"]), "review"
-            fixed += 1
-    if fixed:
-        print(f"applied {fixed} overrides to tracked games", flush=True)
-    if args.apply_only:
-        if fixed:
-            GAMES.write_text(json.dumps(games_doc, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-        return
-
-    pool = {}
-    for s in SORTS:
-        d = get_json(f"https://apis.roblox.com/explore-api/v1/get-sort-content?sessionId=radar{int(time.time())}&sortId={s}&device=computer&country=us")
-        for g in (d or {}).get("games", []):
-            pool.setdefault(str(g["universeId"]), g)
-        time.sleep(PAUSE)
-    print(f"charts: {len(pool)} games", flush=True)
-
-    for i, kw in enumerate(KEYWORDS, 1):
-        token = ""
-        for _ in range(args.pages):
-            url = ("https://apis.roblox.com/search-api/omni-search?searchQuery=" + urllib.parse.quote(kw)
-                   + f"&pageToken={token}&sessionId=radar{int(time.time())}&pageType=all")
-            d = get_json(url, tries=3)
-            if not d:
-                break
-            for grp in d.get("searchResults", []):
-                if grp.get("contentGroupType") != "Game":
-                    continue
-                for g in grp.get("contents", []):
-                    if g.get("universeId"):
-                        pool.setdefault(str(g["universeId"]), g)
-            token = d.get("nextPageToken") or ""
-            if not token:
-                break
-            time.sleep(0.4)
-        if i % 10 == 0:
-            print(f"  keywords {i}/{len(KEYWORDS)} -> pool {len(pool)}", flush=True)
-        time.sleep(0.3)
-
-    new_ids = [uid for uid, g in pool.items()
-               if uid not in known and (g.get("playerCount") or 0) >= args.min_players]
-    print(f"new candidates with >= {args.min_players} players: {len(new_ids)}", flush=True)
-    if not new_ids:
-        if fixed:
-            GAMES.write_text(json.dumps(games_doc, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-        return
+    # candidates with a known player count below the bar are dropped before any request
+    cand = [uid for uid, p in pool.items() if uid not in known and (p.get("p") is None or p["p"] >= min_players)]
+    print(f"candidates to check: {len(cand)} (of {len(pool)} found, {len(known)} already tracked)", flush=True)
+    if not cand:
+        return 0
 
     details, votes, icons, thumbs = {}, {}, {}, {}
-    for chunk in batches(new_ids, 50):
+    for chunk in batches(cand, 50):
         q = ",".join(chunk)
         d = get_json(f"https://games.roblox.com/v1/games?universeIds={q}")
         for item in (d or {}).get("data", []):
-            details[str(item["id"])] = item
+            if (item.get("playing") or 0) >= min_players:
+                details[str(item["id"])] = item
         time.sleep(PAUSE)
+    new_ids = list(details.keys())
+    print(f"new games with >= {min_players} players: {len(new_ids)}", flush=True)
+    if not new_ids:
+        return 0
+
+    for chunk in batches(new_ids, 50):
+        q = ",".join(chunk)
         v = get_json(f"https://games.roblox.com/v1/games/votes?universeIds={q}")
         for item in (v or {}).get("data", []):
             votes[str(item["id"])] = item
@@ -245,23 +271,21 @@ def main():
 
     added = 0
     n_times = len(history["times"])
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     for uid in new_ids:
-        d = details.get(uid)
-        if not d:
-            continue
-        p = pool[uid]
-        cat, tags = classify(d.get("name"), d.get("description"), d.get("genre_l1") or p.get("genreL1"))
+        d = details[uid]
+        p = pool.get(uid, {})
+        cat, tags = classify(d.get("name"), d.get("description"), d.get("genre_l1") or p.get("g"))
         src = "rules"
         if uid in overrides:
             cat, tags, src = overrides[uid]["c"], list(overrides[uid]["t"]), "review"
         vt = votes.get(uid, {})
         up, down = vt.get("upVotes", 0), vt.get("downVotes", 0)
         creator = d.get("creator") or {}
-        ctype = creator.get("type")
-        cid = creator.get("id")
+        ctype, cid = creator.get("type"), creator.get("id")
         curl = (f"https://www.roblox.com/communities/{cid}" if ctype == "Group"
                 else f"https://www.roblox.com/users/{cid}/profile" if cid else None)
-        genre = d.get("genre_l1") or p.get("genreL1") or ""
+        genre = d.get("genre_l1") or p.get("g") or ""
         if d.get("genre_l2"):
             genre += " / " + d["genre_l2"]
         games_doc["games"].append({
@@ -273,14 +297,93 @@ def main():
             "created": d.get("created"), "updated": d.get("updated"), "maxP": d.get("maxPlayers"),
             "genre": genre, "creator": creator.get("name"), "cType": ctype, "cUrl": curl,
             "verified": bool(creator.get("hasVerifiedBadge")),
-            "maturity": p.get("contentMaturity"), "socials": socials(d.get("description")),
-            "added": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            "maturity": p.get("m"), "socials": socials(d.get("description")),
+            "added": stamp, "found": p.get("src"),
         })
         history["series"][uid] = [None] * n_times
         added += 1
+    return added
 
-    GAMES.write_text(json.dumps(games_doc, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    HISTORY.write_text(json.dumps(history, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
+def apply_overrides(games_doc, overrides):
+    fixed = 0
+    for g in games_doc["games"]:
+        o = overrides.get(str(g["id"]))
+        if o and (g.get("cat") != o["c"] or sorted(g.get("tags", [])) != sorted(o["t"]) or g.get("src") != "review"):
+            g["cat"], g["tags"], g["src"] = o["c"], list(o["t"]), "review"
+            fixed += 1
+    if fixed:
+        print(f"applied {fixed} overrides to tracked games", flush=True)
+    return fixed
+
+
+def creators_of(games_doc):
+    seen, out = set(), []
+    for g in games_doc["games"]:
+        cid = (g.get("cUrl") or "").rsplit("/", 1)[-1]
+        if g.get("cType") == "User":
+            cid = (g.get("cUrl") or "").split("/users/")[-1].split("/")[0]
+        if g.get("cType") in ("Group", "User") and cid.isdigit() and (g["cType"], cid) not in seen:
+            seen.add((g["cType"], cid))
+            out.append((g["cType"], cid))
+    return out
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--min-players", type=int, default=1000)
+    ap.add_argument("--pages", type=int, default=2, help="max search pages per keyword")
+    ap.add_argument("--apply-only", action="store_true")
+    ap.add_argument("--shard", help="i/N: sweep only slice i of the sources and write candidates")
+    ap.add_argument("--out", help="candidates file for --shard")
+    ap.add_argument("--merge", help="directory with candidates-*.json from shards")
+    ap.add_argument("--no-groups", action="store_true", help="skip creator catalogues")
+    args = ap.parse_args()
+
+    games_doc = json.loads(GAMES.read_text(encoding="utf-8"))
+    history = json.loads(HISTORY.read_text(encoding="utf-8"))
+    overrides = {}
+    if OVERRIDES.exists():
+        for o in json.loads(OVERRIDES.read_text(encoding="utf-8")):
+            overrides[str(o["id"])] = o
+
+    fixed = apply_overrides(games_doc, overrides)
+    if args.apply_only:
+        if fixed:
+            GAMES.write_text(json.dumps(games_doc, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        return
+
+    pool = {}
+    if args.merge:
+        for f in sorted(glob.glob(str(Path(args.merge) / "**" / "candidates-*.json"), recursive=True)):
+            part = json.loads(Path(f).read_text(encoding="utf-8"))
+            for uid, p in part.items():
+                pool.setdefault(uid, p)
+            print(f"  {Path(f).name}: {len(part)} candidates", flush=True)
+        print(f"merged pool: {len(pool)}", flush=True)
+    else:
+        creators = [] if args.no_groups else creators_of(games_doc)
+        if args.shard:
+            i, n = (int(x) for x in args.shard.split("/"))
+            kws = KEYWORDS[i::n]
+            crs = creators[i::n]
+            if i == 0:
+                sweep_charts(pool)
+            print(f"shard {i}/{n}: {len(kws)} keywords, {len(crs)} creators", flush=True)
+            sweep_keywords(pool, kws, args.pages)
+            sweep_groups(pool, crs)
+            out = Path(args.out or f"candidates-{i}.json")
+            out.write_text(json.dumps(pool, separators=(",", ":")), encoding="utf-8")
+            print(f"wrote {out} with {len(pool)} candidates")
+            return
+        sweep_charts(pool)
+        sweep_keywords(pool, KEYWORDS, args.pages)
+        sweep_groups(pool, creators)
+
+    added = add_candidates(games_doc, history, overrides, pool, args.min_players)
+    if added or fixed:
+        GAMES.write_text(json.dumps(games_doc, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        HISTORY.write_text(json.dumps(history, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(f"added {added} games (total {len(games_doc['games'])})")
 
 
