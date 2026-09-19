@@ -105,7 +105,56 @@ def batches(seq, size):
         yield seq[i:i + size]
 
 
+RAW_DAYS = 30  # keep every reading for this long; older days collapse to one daily peak
+
+
+def compact_history(history):
+    """Collapse readings older than RAW_DAYS into one daily-peak reading per UTC day."""
+    times = history["times"]
+    if not times:
+        return
+    cutoff = datetime.now(timezone.utc).timestamp() * 1000 - RAW_DAYS * 86400e3
+    parsed = [datetime.fromisoformat(x.replace("Z", "+00:00")).timestamp() * 1000 for x in times]
+    old_idx = [i for i, ms in enumerate(parsed) if ms < cutoff]
+    if not old_idx:
+        return
+    # group old readings by UTC date
+    by_day = {}
+    for i in old_idx:
+        day = datetime.fromtimestamp(parsed[i] / 1000, timezone.utc).strftime("%Y-%m-%d")
+        by_day.setdefault(day, []).append(i)
+    # a day already collapsed has exactly one reading at 12:00Z; leave it alone
+    collapsible = {d: idx for d, idx in by_day.items() if not (len(idx) == 1 and times[idx[0]].endswith("T12:00:00Z"))}
+    if not collapsible:
+        return
+    keep_idx = [i for i in range(len(times)) if not any(i in idx for idx in collapsible.values())]
+    new_times, new_series = [], {gid: [] for gid in history["series"]}
+    # rebuild: collapsed days first (in order), then everything kept, then sort by time
+    entries = []
+    for day, idx in sorted(collapsible.items()):
+        stamp = f"{day}T12:00:00Z"
+        vals = {}
+        for gid, s in history["series"].items():
+            best = None
+            for i in idx:
+                if i < len(s) and s[i] is not None and (best is None or s[i] > best):
+                    best = s[i]
+            vals[gid] = best
+        entries.append((stamp, vals))
+    for i in keep_idx:
+        entries.append((times[i], {gid: (s[i] if i < len(s) else None) for gid, s in history["series"].items()}))
+    entries.sort(key=lambda e: e[0])
+    for stamp, vals in entries:
+        new_times.append(stamp)
+        for gid in new_series:
+            new_series[gid].append(vals.get(gid))
+    history["times"] = new_times
+    history["series"] = new_series
+    print(f"  history compacted: {len(collapsible)} old days collapsed, {len(new_times)} readings kept", flush=True)
+
+
 def main():
+    light = "--light" in sys.argv
     games_doc = json.loads(GAMES.read_text(encoding="utf-8"))
     history = json.loads(HISTORY.read_text(encoding="utf-8"))
     games = games_doc["games"]
@@ -119,6 +168,8 @@ def main():
             for item in d.get("data", []):
                 details[str(item["id"])] = item
         time.sleep(PAUSE)
+        if light:
+            continue
         v = get_json(f"https://games.roblox.com/v1/games/votes?universeIds={q}")
         if v:
             for item in v.get("data", []):
@@ -173,12 +224,15 @@ def main():
             g["thumb"] = thumbs[gid]
 
     cookie = os.environ.get("ROBLOX_COOKIE", "").strip()
-    if cookie:
+    if light:
+        print("light run: players/visits only", flush=True)
+    elif cookie:
         n = fetch_social_links(games, cookie)
         print(f"social links refreshed for {n} games", flush=True)
     else:
         print("ROBLOX_COOKIE not set; keeping social links found in descriptions only", flush=True)
 
+    compact_history(history)
     games_doc["generated"] = stamp
     GAMES.write_text(json.dumps(games_doc, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     HISTORY.write_text(json.dumps(history, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

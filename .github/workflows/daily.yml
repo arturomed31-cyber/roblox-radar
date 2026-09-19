@@ -22,7 +22,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: daily-refresh
+  group: radar-data
   cancel-in-progress: false
 
 jobs:

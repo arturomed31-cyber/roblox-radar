@@ -440,8 +440,8 @@ const I18N = {
     noTag: "no pattern flagged", by: "by", unknown: "unknown", auto: "auto",
     reviewed: "Hand-reviewed classification", autoTip: "Auto-classified by keyword rules, not yet reviewed",
     openStats: n => `Open stats for ${n}`,
-    tracked: (n, p) => `<b>${n}</b> games tracked · <b>${p}</b> concurrent players`, lastRefresh: d => `last refresh ${d} UTC · refreshes daily`,
-    footer: 'Click any thumbnail for full stats, the player-history chart, the creator\'s Roblox group and any social links. Counts come from Roblox\'s public game and thumbnail APIs and are refreshed once a day at 20:00 UTC. Categories and pattern signals were assigned by reading each game\'s name, description and genre — a research starting point, not a verdict. "Copy of another hit" means the core loop visibly follows an earlier game; "Borrowed IP" flags external copyrighted characters or brands.',
+    tracked: (n, p) => `<b>${n}</b> games tracked · <b>${p}</b> concurrent players`, lastRefresh: d => `last reading ${d} UTC · readings every 2 h, full refresh daily`,
+    footer: 'Click any thumbnail for full stats, the player-history chart, the creator\'s Roblox group and any social links. Counts come from Roblox\'s public game and thumbnail APIs and are read every 2 hours; ratings, images, social links and new games refresh daily at 20:00 UTC. Categories and pattern signals were assigned by reading each game\'s name, description and genre — a research starting point, not a verdict. "Copy of another hit" means the core loop visibly follows an earlier game; "Borrowed IP" flags external copyrighted characters or brands.',
     loading: "Loading radar data…", loadErr: "Could not load data/games.json — if you opened this file directly, serve the folder over http (GitHub Pages does this for you).",
     st_now: "Players now", st_rank: "Rank by players", st_peak: "Peak on record", st_visits: "Total visits", st_vpd: "Visits / day", st_rating: "Rating",
     st_votes: "Votes", st_favs: "Favorites", st_age: "Age", st_upd: "Last updated", st_server: "Server size", st_mat: "Maturity",
@@ -450,7 +450,7 @@ const I18N = {
     noSocials: "No Discord or social link found for this game. Roblox only shows a game's Social Links to logged-in users 13+ — check the game page.",
     ch_title: "Concurrent players", ch_now: "now", ch_peak: "range peak", ch_low: "range low", ch_avg: "range avg", ch_allPeak: "all-time peak on record",
     ch_notEnough: "Not enough history recorded yet", ch_empty: "Not enough readings for this range yet.", ch_peakLbl: "peak",
-    ch_note: (n, h) => `${n} readings across ${h} of monitoring. Roblox publishes no player history, so this chart only grows as the radar keeps sampling — day, week and month views unlock as history accumulates.`,
+    ch_note: (n, h) => `${n} readings across ${h} of monitoring, one every 2 hours. Roblox publishes no player history, so this chart only grows as the radar keeps sampling; beyond 30 days it keeps one daily peak per game.`,
     underHour: "under an hour", hours: h => `${h} h`,
     r_24h: "24h", r_7d: "7d", r_30d: "1mo", r_1y: "1y", r_all: "All",
     s_lang: "Language", s_lang_h: "Interface language", s_theme: "Theme", s_theme_h: "System follows your OS setting",
@@ -498,8 +498,8 @@ const I18N = {
     noTag: "sin patrón detectado", by: "de", unknown: "desconocido", auto: "auto",
     reviewed: "Clasificación revisada a mano", autoTip: "Clasificado automáticamente por reglas, aún sin revisar",
     openStats: n => `Ver estadísticas de ${n}`,
-    tracked: (n, p) => `<b>${n}</b> juegos seguidos · <b>${p}</b> jugadores concurrentes`, lastRefresh: d => `última actualización ${d} UTC · se actualiza a diario`,
-    footer: 'Haz clic en cualquier miniatura para ver estadísticas completas, la gráfica de jugadores, el grupo de Roblox del creador y sus redes. Los datos vienen de las APIs públicas de Roblox y se actualizan una vez al día a las 20:00 UTC. Las categorías y señales se asignaron leyendo nombre, descripción y género de cada juego — son un punto de partida para investigar, no un veredicto. "Copia de otro éxito" significa que la mecánica central sigue visiblemente a un juego anterior; "IP prestada" marca personajes o marcas con derechos de terceros.',
+    tracked: (n, p) => `<b>${n}</b> juegos seguidos · <b>${p}</b> jugadores concurrentes`, lastRefresh: d => `última lectura ${d} UTC · lecturas cada 2 h, actualización completa diaria`,
+    footer: 'Haz clic en cualquier miniatura para ver estadísticas completas, la gráfica de jugadores, el grupo de Roblox del creador y sus redes. Los datos vienen de las APIs públicas de Roblox y se leen cada 2 horas; valoraciones, imágenes, redes y juegos nuevos se actualizan a diario a las 20:00 UTC. Las categorías y señales se asignaron leyendo nombre, descripción y género de cada juego — son un punto de partida para investigar, no un veredicto. "Copia de otro éxito" significa que la mecánica central sigue visiblemente a un juego anterior; "IP prestada" marca personajes o marcas con derechos de terceros.',
     loading: "Cargando datos del radar…", loadErr: "No se pudo cargar data/games.json — si abriste el archivo directamente, sirve la carpeta por http (GitHub Pages lo hace por ti).",
     st_now: "Jugadores ahora", st_rank: "Puesto por jugadores", st_peak: "Pico registrado", st_visits: "Visitas totales", st_vpd: "Visitas / día", st_rating: "Valoración",
     st_votes: "Votos", st_favs: "Favoritos", st_age: "Edad", st_upd: "Última actualización", st_server: "Tamaño de servidor", st_mat: "Madurez",
@@ -508,7 +508,7 @@ const I18N = {
     noSocials: "No se encontró Discord ni redes para este juego. Roblox solo muestra los Social Links a usuarios con sesión y 13+ — revisa la página del juego.",
     ch_title: "Jugadores concurrentes", ch_now: "ahora", ch_peak: "pico del rango", ch_low: "mínimo del rango", ch_avg: "promedio", ch_allPeak: "pico histórico registrado",
     ch_notEnough: "Aún no hay suficiente historial", ch_empty: "Aún no hay suficientes lecturas para este rango.", ch_peakLbl: "pico",
-    ch_note: (n, h) => `${n} lecturas a lo largo de ${h} de seguimiento. Roblox no publica historial de jugadores, así que esta gráfica solo crece mientras el radar sigue midiendo — las vistas de día, semana y mes se activan al acumular historial.`,
+    ch_note: (n, h) => `${n} lecturas a lo largo de ${h} de seguimiento, una cada 2 horas. Roblox no publica historial de jugadores, así que esta gráfica solo crece mientras el radar sigue midiendo; más allá de 30 días conserva un pico diario por juego.`,
     underHour: "menos de una hora", hours: h => `${h} h`,
     r_24h: "24h", r_7d: "7d", r_30d: "1m", r_1y: "1a", r_all: "Todo",
     s_lang: "Idioma", s_lang_h: "Idioma de la interfaz", s_theme: "Tema", s_theme_h: "Sistema sigue el ajuste de tu equipo",
@@ -922,7 +922,7 @@ function chartHtml(g, rangeKey){
 
     const gaps = pts.slice(1).map((p,i) => p.t - pts[i].t).sort((a,b)=>a-b);
     const median = gaps[Math.floor(gaps.length/2)] || 1;
-    const gapLimit = Math.max(median * 3, 20*60e3);
+    const gapLimit = Math.max(median * 3, 26*3600e3);
     let line = '', area = '', segStart = null;
     pts.forEach((p, i) => {
       const broke = i > 0 && (p.t - pts[i-1].t) > gapLimit;
