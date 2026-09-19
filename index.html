@@ -177,6 +177,27 @@ td{padding:8px 12px;font-size:13px;vertical-align:middle;}
 .chart-tip b{color:var(--accent);font-weight:600;}
 .chart-note{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-faint);margin-top:6px;line-height:1.5;}
 .chart-empty{font-size:12px;color:var(--text-faint);padding:12px 0;}
+.note-form{position:absolute;z-index:3;background:var(--panel);border:1px solid var(--accent);border-radius:8px;padding:8px;box-shadow:0 8px 22px var(--shadow);display:flex;gap:6px;align-items:center;max-width:calc(100% - 16px);}
+.note-form input{background:var(--panel-2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 9px;font-family:inherit;font-size:12.5px;width:220px;max-width:50vw;}
+.note-form input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+.note-form button{font-family:inherit;font-size:12px;border-radius:6px;padding:6px 10px;border:1px solid var(--border);background:var(--panel-2);color:var(--text);cursor:pointer;}
+.note-form button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-text);font-weight:600;}
+.note-form .when{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-faint);white-space:nowrap;}
+.notes-list{margin-top:10px;display:flex;flex-direction:column;gap:4px;}
+.note-item{display:flex;align-items:center;gap:10px;font-size:12px;padding:5px 8px;border-radius:6px;background:var(--panel);border:1px solid var(--border);}
+.note-item .when{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--warn);white-space:nowrap;}
+.note-item .txt{flex:1;min-width:0;overflow-wrap:anywhere;}
+.note-item .shared{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text-faint);}
+.note-item button{background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:5px;font-size:11px;padding:3px 7px;cursor:pointer;font-family:inherit;}
+.note-item button:hover{color:var(--text);border-color:var(--text-faint);}
+.notes-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;}
+.notes-head .t{font-size:12px;font-weight:600;}
+.notes-head .tools{display:flex;gap:6px;}
+.notes-head .tools button,.notes-head .tools label{font-family:inherit;font-size:11px;border-radius:6px;padding:4px 9px;border:1px solid var(--border);background:var(--panel);color:var(--text-dim);cursor:pointer;}
+.notes-head .tools button:hover,.notes-head .tools label:hover{color:var(--text);border-color:var(--text-faint);}
+.notes-hint{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-faint);margin-top:6px;}
+.chart-wrap svg{cursor:crosshair;}
+.marker{cursor:pointer;}
 .links-row{display:flex;flex-wrap:wrap;gap:8px;}
 .link-btn{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:8px 13px;border-radius:8px;text-decoration:none;border:1px solid var(--border);background:var(--panel-2);color:var(--text);}
 .link-btn:hover{border-color:var(--accent);color:var(--accent);}
@@ -487,6 +508,9 @@ const I18N = {
     bz_note: "Estimates only. DAU ≈ average concurrent players over the last 24 h × 12 (a common Roblox ratio). Earnings assume $6–18 per month per average concurrent player after Roblox's cut (calibrated on publicly reported cases), adjusted for how the game monetizes. Asking prices in the buyer market usually run 12–24× monthly earnings for small and mid-size games; the biggest games are rarely for sale. Roblox publishes none of this; treat it as a starting range for due diligence.",
     bz_pending: "Ownership and monetization data arrive with the next daily refresh.",
     sc_group: "Group-owned (transferable)",
+    n_title: "Notes on this chart", n_hint: "Click anywhere on the chart to pin a note at that moment. Notes are saved in this browser; export them to keep or share.",
+    n_placeholder: "What happened here? (update, promo, drop…)", n_save: "Save", n_cancel: "Cancel", n_delete: "Delete", n_edit: "Edit",
+    n_empty: "No notes yet.", n_export: "Export", n_import: "Import", n_shared: "shared", n_exported: "Notes exported", n_imported: n => `${n} notes imported`,
     cats: {sim:'Simulator / Idle', rp:'Roleplay', shooter:'Shooter', fight:'Fighting / PvP', action:'Open-world action', obby:'Obby / Platformer', sports:'Sports & Racing', rpg:'RPG / Adventure', horror:'Horror / Survival', party:'Party / Casual', strategy:'Strategy / TD', sandbox:'Sandbox / Building', fangame:'Fan game', other:'Tool / Other'},
     tags: {'brainrot':'Brainrot','mm2-clone':'MM2 clone','mm2-original':'MM2 (the original)','minecraft-clone':'Minecraft-derived','tower':'Tower climb','tower-defense':'Tower defense','steal-pattern':'"Steal a X" formula','plus1-pattern':'"+1 per click" formula','duels-pattern':'"DUELS" arena formula','rng-gacha':'RNG / gacha loop','copycat':'Copy of another hit','licensed-ip':'Borrowed IP','flagship':'Original flagship','anime':'Anime','meme':'Meme premise'},
     signals: {'brainrot':'Brainrot themed','mm2-clone':'MM2 clones','minecraft-clone':'Minecraft-derived','tower':'Tower climbers','steal-pattern':'"Steal a X" formula','plus1-pattern':'"+1 per click" formula','duels-pattern':'"DUELS" arenas','copycat':'Copies of other hits','licensed-ip':'Borrowed IP','flagship':'Original flagships'},
@@ -554,6 +578,9 @@ const I18N = {
     bz_note: "Solo estimaciones. DAU ≈ jugadores concurrentes promedio de las últimas 24 h × 12 (proporción habitual en Roblox). La ganancia asume $6–18 al mes por jugador concurrente promedio tras la comisión de Roblox (calibrado con casos públicos), ajustado por cómo monetiza el juego. En el mercado de compraventa se suele pedir 12–24× la ganancia mensual en juegos pequeños y medianos; los gigantes rara vez se venden. Roblox no publica nada de esto; úsalo como rango inicial para tu diligencia.",
     bz_pending: "Los datos de propiedad y monetización llegan con la próxima actualización diaria.",
     sc_group: "Propiedad de grupo (transferible)",
+    n_title: "Notas en esta gráfica", n_hint: "Haz clic en cualquier punto de la gráfica para fijar una nota en ese momento. Las notas se guardan en este navegador; expórtalas para conservarlas o compartirlas.",
+    n_placeholder: "¿Qué pasó aquí? (actualización, promo, caída…)", n_save: "Guardar", n_cancel: "Cancelar", n_delete: "Borrar", n_edit: "Editar",
+    n_empty: "Aún no hay notas.", n_export: "Exportar", n_import: "Importar", n_shared: "compartida", n_exported: "Notas exportadas", n_imported: n => `${n} notas importadas`,
     cats: {sim:'Simulador / Idle', rp:'Roleplay', shooter:'Shooter', fight:'Lucha / PvP', action:'Acción mundo abierto', obby:'Obby / Plataformas', sports:'Deportes y carreras', rpg:'RPG / Aventura', horror:'Terror / Supervivencia', party:'Fiesta / Casual', strategy:'Estrategia / TD', sandbox:'Sandbox / Construcción', fangame:'Fan game', other:'Herramienta / Otro'},
     tags: {'brainrot':'Brainrot','mm2-clone':'Clon de MM2','mm2-original':'MM2 (el original)','minecraft-clone':'Derivado de Minecraft','tower':'Torre','tower-defense':'Tower defense','steal-pattern':'Fórmula "Steal a X"','plus1-pattern':'Fórmula "+1 por clic"','duels-pattern':'Fórmula "DUELS"','rng-gacha':'Bucle RNG / gacha','copycat':'Copia de otro éxito','licensed-ip':'IP prestada','flagship':'Original insignia','anime':'Anime','meme':'Premisa meme'},
     signals: {'brainrot':'Temática brainrot','mm2-clone':'Clones de MM2','minecraft-clone':'Derivados de Minecraft','tower':'Torres','steal-pattern':'Fórmula "Steal a X"','plus1-pattern':'Fórmula "+1 por clic"','duels-pattern':'Arenas "DUELS"','copycat':'Copias de otros éxitos','licensed-ip':'IP prestada','flagship':'Originales insignia'},
@@ -899,6 +926,60 @@ function render(){
   document.getElementById('moreBtn').textContent = t('more')(rows.length - state.shown);
 }
 
+/* ---------- chart notes (per browser + shared data/notes.json) ---------- */
+const NOTES_KEY = 'radar.notes.v1';
+let NOTES = {};          // {gameId: [{id, t, text}]}
+let SHARED_NOTES = {};   // read-only, from data/notes.json
+try { NOTES = JSON.parse(localStorage.getItem(NOTES_KEY) || '{}'); } catch (e) { NOTES = {}; }
+function saveNotes(){ try { localStorage.setItem(NOTES_KEY, JSON.stringify(NOTES)); } catch (e) {} }
+function notesFor(g){
+  const own = (NOTES[g.id] || []).map(n => ({...n, shared:false}));
+  const sh = (SHARED_NOTES[g.id] || []).map(n => ({...n, shared:true}));
+  return own.concat(sh).sort((a,b) => a.t - b.t);
+}
+function addNote(g, t, text){
+  const list = NOTES[g.id] || (NOTES[g.id] = []);
+  list.push({id: Date.now().toString(36) + Math.random().toString(36).slice(2,6), t, text});
+  saveNotes();
+}
+function updateNote(g, id, text){
+  const n = (NOTES[g.id] || []).find(x => x.id === id);
+  if(n){ n.text = text; saveNotes(); }
+}
+function deleteNote(g, id){
+  NOTES[g.id] = (NOTES[g.id] || []).filter(x => x.id !== id);
+  if(!NOTES[g.id].length) delete NOTES[g.id];
+  saveNotes();
+}
+function exportNotes(){
+  const blob = new Blob([JSON.stringify(NOTES, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'roblox-radar-notes.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function importNotes(file, done){
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const incoming = JSON.parse(r.result);
+      let n = 0;
+      Object.entries(incoming).forEach(([gid, list]) => {
+        if(!Array.isArray(list)) return;
+        const mine = NOTES[gid] || (NOTES[gid] = []);
+        list.forEach(x => {
+          if(x && typeof x.t === 'number' && typeof x.text === 'string' && !mine.some(m => m.id === x.id)){
+            mine.push({id: x.id || (Date.now().toString(36) + n), t: x.t, text: x.text}); n++;
+          }
+        });
+      });
+      saveNotes(); done(n);
+    } catch (e) { done(0); }
+  };
+  r.readAsText(file);
+}
+
 /* ---------- player history chart (SteamDB-style) ---------- */
 const RANGES = [
   {key:'24h', ms:24*3600e3}, {key:'7d', ms:7*86400e3}, {key:'30d', ms:30*86400e3}, {key:'1y', ms:365*86400e3}, {key:'all', ms:Infinity}
@@ -997,6 +1078,17 @@ function chartHtml(g, rangeKey){
     const peak = pts.reduce((m,p) => p.v > m.v ? p : m, pts[0]);
     const last = pts[pts.length-1];
     const peakLabelX = Math.min(Math.max(x(peak.t), PL + 60), W - PR - 60);
+    const notes = notesFor(g).filter(n => n.t >= t0 && n.t <= t1);
+    const markers = notes.map((n, i) => {
+      const nx = x(n.t), ly = PT + 22 + (i % 3) * 12;
+      const label = n.text.length > 26 ? n.text.slice(0, 25) + '…' : n.text;
+      const anchor = nx > W - 120 ? 'end' : 'start', dx = nx > W - 120 ? -5 : 5;
+      return `<g class="marker" data-note="${n.id}">
+        <line x1="${nx.toFixed(1)}" y1="${PT}" x2="${nx.toFixed(1)}" y2="${H-PB}" stroke="var(--warn)" stroke-width="1.2" stroke-dasharray="4 3" opacity=".9"/>
+        <circle cx="${nx.toFixed(1)}" cy="${H-PB}" r="4" fill="var(--warn)"/>
+        <text x="${(nx + dx).toFixed(1)}" y="${ly}" text-anchor="${anchor}" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--warn)">${esc(label)}</text>
+      </g>`;
+    }).join('');
     body = `<div class="chart-wrap" id="chartWrap">
       <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('ch_title')}" id="chartSvg">
         ${ygrid}${xgrid}
@@ -1009,8 +1101,10 @@ function chartHtml(g, rangeKey){
         <line id="chartCursor" x1="0" y1="${PT}" x2="0" y2="${H-PB}" stroke="var(--text-dim)" stroke-width="1" visibility="hidden"/>
         <circle id="chartDot" cx="0" cy="0" r="4" fill="var(--panel)" stroke="var(--accent)" stroke-width="2" visibility="hidden"/>
         <rect x="${PL}" y="${PT}" width="${W-PL-PR}" height="${H-PT-PB}" fill="transparent" id="chartHit"/>
+        ${markers}
       </svg>
       <div class="chart-tip" id="chartTip" hidden></div>
+      <div class="note-form" id="noteForm" hidden></div>
     </div>`;
     chartHtml._geom = {pts, W, H, PL, PR, PT, PB, t0, span, x, y};
   }
@@ -1033,7 +1127,81 @@ function chartHtml(g, rangeKey){
       <div>${t('ch_allPeak')} <b class="peak">${allPeak ? fmtFull(allPeak.v) : '—'}</b>${allPeak ? ` <span>· ${fmtTime(allPeak.t, true)}</span>` : ''}</div>
     </div>
     ${body}
-    <div class="chart-note">${t('ch_note')(all.length, covered < 1 ? t('underHour') : t('hours')(covered))}</div>`;
+    <div class="chart-note">${t('ch_note')(all.length, covered < 1 ? t('underHour') : t('hours')(covered))}</div>
+    <div class="notes-head">
+      <span class="t">${t('n_title')} (${notesFor(g).length})</span>
+      <div class="tools">
+        <button type="button" id="notesExport">${t('n_export')}</button>
+        <label for="notesImport">${t('n_import')}</label><input type="file" id="notesImport" accept="application/json" hidden>
+      </div>
+    </div>
+    <div class="notes-list" id="notesList">
+      ${notesFor(g).length ? notesFor(g).map(n => `<div class="note-item" data-note="${n.id}">
+          <span class="when">${fmtTime(n.t, true)}</span><span class="txt">${esc(n.text)}</span>
+          ${n.shared ? `<span class="shared">${t('n_shared')}</span>` : `<button type="button" data-edit="${n.id}">${t('n_edit')}</button><button type="button" data-del="${n.id}">${t('n_delete')}</button>`}
+        </div>`).join('') : `<div class="notes-hint">${t('n_empty')}</div>`}
+    </div>
+    <div class="notes-hint">${t('n_hint')}</div>`;
+}
+
+function openNoteForm(g, tMs, existing){
+  const wrap = document.getElementById('chartWrap');
+  const form = document.getElementById('noteForm');
+  const geom = chartHtml._geom;
+  if(!wrap || !form || !geom) return;
+  const svg = document.getElementById('chartSvg');
+  const r = svg.getBoundingClientRect();
+  const px = geom.x(tMs) * r.width / geom.W;
+  form.innerHTML = `<span class="when">${fmtTime(tMs, true)}</span>
+    <input type="text" id="noteText" maxlength="140" placeholder="${t('n_placeholder')}" value="${existing ? esc(existing.text) : ''}">
+    <button type="button" class="primary" id="noteSave">${t('n_save')}</button>
+    <button type="button" id="noteCancel">${t('n_cancel')}</button>`;
+  form.hidden = false;
+  form.style.left = Math.max(4, Math.min(px, r.width - 340)) + 'px';
+  form.style.top = '8px';
+  const input = document.getElementById('noteText');
+  input.focus();
+  const close = () => { form.hidden = true; form.innerHTML = ''; };
+  const save = () => {
+    const text = input.value.trim();
+    if(!text){ close(); return; }
+    if(existing) updateNote(g, existing.id, text); else addNote(g, tMs, text);
+    renderChart(g, currentRange);
+  };
+  document.getElementById('noteSave').addEventListener('click', save);
+  document.getElementById('noteCancel').addEventListener('click', close);
+  input.addEventListener('keydown', e => { if(e.key === 'Enter') save(); if(e.key === 'Escape'){ e.stopPropagation(); close(); } });
+}
+
+function bindNotes(g){
+  const svg = document.getElementById('chartSvg');
+  const geom = chartHtml._geom;
+  if(svg && geom){
+    svg.addEventListener('click', e => {
+      const marker = e.target.closest('.marker');
+      if(marker){
+        const n = notesFor(g).find(x => x.id === marker.dataset.note);
+        if(n && !n.shared) openNoteForm(g, n.t, n);
+        return;
+      }
+      if(!e.target.closest('#chartHit')) return;
+      const r = svg.getBoundingClientRect();
+      const sx = (e.clientX - r.left) * geom.W / r.width;
+      let tMs = geom.t0 + ((sx - geom.PL) / (geom.W - geom.PL - geom.PR)) * geom.span;
+      tMs = Math.max(geom.t0, Math.min(geom.t0 + geom.span, Math.round(tMs / 60000) * 60000));
+      openNoteForm(g, tMs, null);
+    });
+  }
+  const list = document.getElementById('notesList');
+  if(list) list.addEventListener('click', e => {
+    const del = e.target.closest('[data-del]'), ed = e.target.closest('[data-edit]');
+    if(del){ deleteNote(g, del.dataset.del); renderChart(g, currentRange); }
+    if(ed){ const n = notesFor(g).find(x => x.id === ed.dataset.edit); if(n) openNoteForm(g, n.t, n); }
+  });
+  const ex = document.getElementById('notesExport');
+  if(ex) ex.addEventListener('click', exportNotes);
+  const im = document.getElementById('notesImport');
+  if(im) im.addEventListener('change', () => { if(im.files[0]) importNotes(im.files[0], n => { renderChart(g, currentRange); }); });
 }
 
 function bindChartHover(){
@@ -1072,6 +1240,7 @@ function renderChart(g, rangeKey){
   currentGame = g; currentRange = rangeKey;
   box.innerHTML = chartHtml(g, rangeKey);
   bindChartHover();
+  bindNotes(g);
   box.querySelectorAll('.range-btn').forEach(b => b.addEventListener('click', () => renderChart(g, b.dataset.range)));
 }
 
@@ -1355,10 +1524,12 @@ document.getElementById('settingsReset').addEventListener('click', () => {
 /* ---------- boot ---------- */
 async function loadData(){
   const bust = '?v=' + Math.floor(Date.now() / 3600e3);
-  const [gamesDoc, hist] = await Promise.all([
+  const [gamesDoc, hist, shared] = await Promise.all([
     fetch('data/games.json' + bust).then(r => r.json()),
-    fetch('data/history.json' + bust).then(r => r.json())
+    fetch('data/history.json' + bust).then(r => r.json()),
+    fetch('data/notes.json' + bust).then(r => r.ok ? r.json() : {}).catch(() => ({}))
   ]);
+  SHARED_NOTES = shared && typeof shared === 'object' ? shared : {};
   const now = Date.now();
   gamesDoc.games.forEach(g => {
     g.age = g.created ? Math.floor((now - new Date(g.created)) / 86400e3) : null;
