@@ -33,6 +33,22 @@ KEYWORDS = [
     "backrooms", "granny", "squid game", "bed wars", "one piece", "dragon ball", "naruto", "car", "train", "plane",
     "pizza", "baby", "family", "dress up", "story", "scary", "gun", "war", "army", "ninja",
     "dungeon", "idle", "grow", "kick", "slap", "lift", "race", "pvp", "trading", "hide and seek",
+    "tower defense", "battle royale", "roblox horror", "escape room", "puzzle", "adventure", "open world",
+    "military", "tank", "boat", "ship", "pirate", "space", "alien", "dinosaur", "dragon", "monster",
+    "cat", "dog", "animal", "bird", "fish", "shark", "egg", "hatch", "pull", "merge", "roll",
+    "lucky block", "rebirth", "evolution", "escape obby", "difficulty chart", "troll", "meme", "funny",
+    "girls", "makeup", "fashion", "hair salon", "house", "mansion", "life", "job", "work", "bank",
+    "police", "cops", "thief", "mafia", "gang", "hood", "crime", "heist", "ninja warrior", "samurai",
+    "wizard", "elemental", "superhero", "villain", "godzilla", "kaiju", "titan", "demon", "vampire",
+    "school escape", "prison escape", "camping", "forest", "island", "desert", "arctic", "winter",
+    "summer", "halloween", "christmas", "hospital", "doctor", "vet", "daycare", "cafe", "bakery",
+    "sushi", "burger", "ice cream", "candy", "supermarket", "store", "shop", "mall", "arcade",
+    "casino", "card", "deck", "chess", "tag", "freeze tag", "dodgeball", "volleyball", "tennis",
+    "golf", "bowling", "boxing", "wrestling", "karate", "gym", "muscle", "strength", "speed",
+    "flying", "jetpack", "glider", "elevator", "cart ride", "slide", "water park", "roller coaster",
+    "theme park", "zoo", "aquarium", "museum", "library", "airport", "bus", "taxi", "truck",
+    "drift", "motorcycle", "bike", "skate", "surf", "ski", "roblox rp", "anime fighting", "anime rng",
+    "brainrot tycoon", "steal a", "jump to steal", "for brainrots", "per click", "keyboard escape",
 ]
 
 GENRE_MAP = {

@@ -9,6 +9,10 @@ on:
         description: "Minimum concurrent players for newly discovered games"
         default: "1000"
         required: false
+      pages:
+        description: "Search pages per keyword (each page = 40 results)"
+        default: "2"
+        required: false
 
 permissions:
   contents: write
@@ -28,7 +32,7 @@ jobs:
           python-version: "3.12"
 
       - name: Discover new games (1,000+ players)
-        run: python scripts/discover.py --min-players "${{ github.event.inputs.min_players || '1000' }}"
+        run: python scripts/discover.py --min-players "${{ github.event.inputs.min_players || '1000' }}" --pages "${{ github.event.inputs.pages || '2' }}"
         continue-on-error: true
 
       - name: Pull live stats from Roblox
@@ -45,5 +49,6 @@ jobs:
             echo "nothing changed"
           else
             git commit -m "data: daily refresh $(date -u +%Y-%m-%d)"
+            git pull --rebase -X theirs origin main
             git push
           fi

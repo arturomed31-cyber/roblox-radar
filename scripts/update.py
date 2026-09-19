@@ -24,7 +24,9 @@ UA = "roblox-radar/1.0 (+https://github.com)"
 
 
 class Unauthorized(Exception):
-    pass
+    def __init__(self, code):
+        super().__init__(f"HTTP {code}")
+        self.code = code
 
 
 def get_json(url, tries=5, headers=None):
@@ -38,7 +40,7 @@ def get_json(url, tries=5, headers=None):
                 return json.loads(r.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
             if e.code in (401, 403):
-                raise Unauthorized(str(e))
+                raise Unauthorized(e.code)
             wait = min(90, 5 * 2 ** attempt)
             print(f"  retry {attempt + 1}/{tries} after {wait}s: {e}", flush=True)
             time.sleep(wait)
@@ -58,12 +60,23 @@ SOCIAL_TYPES = {
 def fetch_social_links(games, cookie):
     """Roblox only serves a game's Social Links to a logged-in session."""
     headers = {"Cookie": f".ROBLOSECURITY={cookie}"}
+    # probe: is the session valid at all, and which account is it?
+    try:
+        me = get_json("https://users.roblox.com/v1/users/authenticated", tries=2, headers=headers)
+        print(f"  session ok: logged in as user id {me.get('id') if me else '?'}", flush=True)
+    except Unauthorized as e:
+        print(f"ROBLOX_COOKIE is not a valid session ({e}). Copy .ROBLOSECURITY again and update the secret.", flush=True)
+        return 0
     updated = 0
     for i, g in enumerate(games, 1):
         try:
             d = get_json(f"https://games.roblox.com/v1/games/{g['id']}/social-links/list", tries=3, headers=headers)
-        except Unauthorized:
-            print("ROBLOX_COOKIE was rejected (401/403). Social links left as they were; refresh the secret.", flush=True)
+        except Unauthorized as e:
+            if e.code == 403:
+                print("Session is valid but social links are forbidden for this account (HTTP 403). "
+                      "Roblox hides Social Links from accounts under 13 / without a verified age — use an account aged 13+.", flush=True)
+            else:
+                print(f"Social links request rejected ({e}); leaving links as they were.", flush=True)
             return updated
         if d is None:
             continue
