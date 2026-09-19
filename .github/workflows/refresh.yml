@@ -26,11 +26,17 @@ jobs:
       - name: Read player counts
         run: python scripts/update.py --light
 
+      - name: Discord alerts
+        run: python scripts/alerts.py
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        continue-on-error: true
+
       - name: Commit reading
         run: |
           git config user.name "roblox-radar bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/games.json data/history.json
+          git add data/games.json data/history.json data/alerts_state.json
           if git diff --cached --quiet; then
             echo "nothing changed"
           else
