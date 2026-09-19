@@ -13,6 +13,10 @@ on:
         description: "Search pages per keyword (each page = 40 results)"
         default: "2"
         required: false
+      skip_discovery:
+        description: "Skip discovery, only refresh stats and social links"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -32,6 +36,7 @@ jobs:
           python-version: "3.12"
 
       - name: Discover new games (1,000+ players)
+        if: ${{ github.event.inputs.skip_discovery != 'true' }}
         run: python scripts/discover.py --min-players "${{ github.event.inputs.min_players || '1000' }}" --pages "${{ github.event.inputs.pages || '2' }}"
         continue-on-error: true
 

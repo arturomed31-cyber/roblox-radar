@@ -68,15 +68,19 @@ def fetch_social_links(games, cookie):
         print(f"ROBLOX_COOKIE is not a valid session ({e}). Copy .ROBLOSECURITY again and update the secret.", flush=True)
         return 0
     updated = 0
+    forbidden = 0
     for i, g in enumerate(games, 1):
         try:
             d = get_json(f"https://games.roblox.com/v1/games/{g['id']}/social-links/list", tries=3, headers=headers)
         except Unauthorized as e:
             if e.code == 403:
-                print("Session is valid but social links are forbidden for this account (HTTP 403). "
-                      "Roblox hides Social Links from accounts under 13 / without a verified age — use an account aged 13+.", flush=True)
-            else:
-                print(f"Social links request rejected ({e}); leaving links as they were.", flush=True)
+                # a few games refuse the request (restricted content); skip them, keep going
+                forbidden += 1
+                if forbidden == 1:
+                    print(f"  403 on game {g['id']} — skipping games that refuse social links", flush=True)
+                time.sleep(0.6)
+                continue
+            print(f"Session expired mid-run ({e}); stopping social links here.", flush=True)
             return updated
         if d is None:
             continue
@@ -91,6 +95,8 @@ def fetch_social_links(games, cookie):
         if i % 100 == 0:
             print(f"  social links {i}/{len(games)}", flush=True)
         time.sleep(0.6)
+    if forbidden:
+        print(f"  {forbidden} games refused social links (403)", flush=True)
     return updated
 
 
