@@ -203,6 +203,11 @@ td{padding:8px 12px;font-size:13px;vertical-align:middle;}
 .link-btn:hover{border-color:var(--accent);color:var(--accent);}
 .link-btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-text);font-weight:600;}
 .link-btn.primary:hover{color:var(--accent-text);opacity:.9;}
+.link-btn.ghost{border-style:dashed;}
+.share-row{display:flex;gap:8px;align-items:center;margin:0 0 10px;}
+.share-btn{font-family:inherit;font-size:12px;color:var(--text-dim);background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:6px 11px;cursor:pointer;}
+.share-btn:hover{color:var(--text);border-color:var(--accent);}
+.share-btn.done{color:var(--good);border-color:var(--good);}
 .no-socials{font-size:12px;color:var(--text-faint);margin-top:10px;}
 
 /* ---------- settings ---------- */
@@ -369,7 +374,7 @@ footer{margin-top:20px;font-size:11.5px;color:var(--text-faint);font-family:'IBM
     </div>
 
     <div class="chipbar" id="tagChips"></div>
-    <div class="count-row" id="countRow"></div>
+    <div class="share-row"><div class="count-row" id="countRow" style="margin:0;flex:1"></div><button type="button" class="share-btn" id="shareView"></button></div>
 
     <div class="table-scroll">
       <table>
@@ -813,6 +818,8 @@ function rowHtml(g){
 
 function render(){
   saveFilters();
+  syncUrl();
+  document.getElementById('shareView').textContent = ts('share');
   document.querySelectorAll('.signal, .chip[data-tag]').forEach(n => {
     const on = state.tags.has(n.dataset.tag);
     n.classList.toggle(n.classList.contains('signal') ? 'active' : 'on', on);
@@ -1225,12 +1232,15 @@ function openModal(idx, rangeKey){
         <a class="link-btn primary" href="https://www.roblox.com/games/${g.place}" target="_blank" rel="noopener">${t('openRoblox')}</a>
         ${g.cUrl ? `<a class="link-btn" href="${esc(g.cUrl)}" target="_blank" rel="noopener">${g.cType === 'Group' ? t('group') : t('profile')}</a>` : ''}
         ${socials}
+        <button type="button" class="link-btn ghost" id="shareGame">${ts('shareGame')}</button>
       </div>
       ${socials ? '' : `<div class="no-socials">${t('noSocials')}</div>`}
     </div>`;
 
   renderChart(g, rangeKey || pickDefaultRange(series));
   overlay.hidden = false;
+  syncUrl();
+  document.getElementById('shareGame').addEventListener('click', e => copyText(buildUrl(g.id), e.currentTarget));
   document.body.style.overflow = 'hidden';
   document.getElementById('modalClose').focus();
 }
@@ -1239,6 +1249,7 @@ function closeModal(){
   document.body.style.overflow = '';
   modal.innerHTML = '';
   currentGame = null;
+  syncUrl();
   if(lastFocus) lastFocus.focus();
 }
 overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
@@ -1301,6 +1312,7 @@ document.getElementById('clearBtn').addEventListener('click', () => {
 /* ---------- views: games / market ---------- */
 function setView(v){
   view = v;
+  syncUrl();
   document.querySelectorAll('.view-switch button').forEach(b => b.classList.toggle('on', b.dataset.view === v));
   document.getElementById('gamesView').hidden = v !== 'games';
   document.getElementById('marketView').hidden = v !== 'market';
@@ -1383,6 +1395,57 @@ function renderMarket(){
     window.scrollTo({top: document.getElementById('gamesView').offsetTop - 12, behavior: 'smooth'});
   }));
 }
+
+/* ---------- shareable links ---------- */
+const SHARE_I18N = {
+  en: {share:'Copy link to this view', shareGame:'Copy link', copied:'Copied ✓'},
+  es: {share:'Copiar enlace a esta vista', shareGame:'Copiar enlace', copied:'Copiado ✓'},
+  pt: {share:'Copiar link desta visão', shareGame:'Copiar link', copied:'Copiado ✓'},
+  fr: {share:'Copier le lien de cette vue', shareGame:'Copier le lien', copied:'Copié ✓'},
+  de: {share:'Link zu dieser Ansicht kopieren', shareGame:'Link kopieren', copied:'Kopiert ✓'},
+  it: {share:'Copia link a questa vista', shareGame:'Copia link', copied:'Copiato ✓'},
+  ru: {share:'Скопировать ссылку на этот вид', shareGame:'Скопировать ссылку', copied:'Скопировано ✓'},
+  ja: {share:'この表示へのリンクをコピー', shareGame:'リンクをコピー', copied:'コピーしました ✓'}
+};
+const ts = k => (SHARE_I18N[settings.lang] || SHARE_I18N.en)[k];
+function buildUrl(gameId){
+  const q = new URLSearchParams();
+  if(gameId) q.set('game', gameId);
+  if(state.search) q.set('q', state.search);
+  if(state.cat) q.set('cat', state.cat);
+  if(state.age) q.set('age', state.age);
+  if(state.trend) q.set('trend', state.trend);
+  if(state.owner) q.set('owner', state.owner);
+  if(state.tags.size) q.set('tags', [...state.tags].join(','));
+  if(state.sort !== 'playing_desc') q.set('sort', state.sort);
+  if(view === 'market') q.set('view', 'market');
+  const qs = q.toString();
+  return location.origin + location.pathname + (qs ? '?' + qs : '');
+}
+function syncUrl(){
+  const u = buildUrl(currentGame ? currentGame.id : null);
+  if(u !== location.href) history.replaceState(null, '', u);
+}
+async function copyText(text, btn){
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) {
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e2) {}
+    ta.remove();
+  }
+  if(btn){ const old = btn.textContent; btn.textContent = ts('copied'); btn.classList.add('done'); setTimeout(() => { btn.textContent = old; btn.classList.remove('done'); }, 1600); }
+}
+function applyUrlState(){
+  const q = new URLSearchParams(location.search);
+  if(!q.toString()) return null;
+  state.search = q.get('q') || ''; state.cat = q.get('cat') || ''; state.age = q.get('age') || '';
+  state.trend = q.get('trend') || ''; state.owner = q.get('owner') || '';
+  state.tags = new Set((q.get('tags') || '').split(',').filter(Boolean));
+  if(q.get('sort')) state.sort = q.get('sort');
+  if(q.get('view') === 'market') view = 'market';
+  return q.get('game');
+}
+document.getElementById('shareView').addEventListener('click', e => copyText(buildUrl(null), e.currentTarget));
 
 /* ---------- language dropdown with flags ---------- */
 const FLAGS = {
@@ -1535,7 +1598,13 @@ async function init(){
   catch (e) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7"><div class="loading">${t('loadErr')}</div></td></tr>`; return; }
   indexGames();
   loadFilters();
+  const gameFromUrl = applyUrlState();
   applyLanguage();
+  if(view === 'market') setView('market');
+  if(gameFromUrl){
+    const g = GAMES.find(x => String(x.id) === String(gameFromUrl));
+    if(g) openModal(g._i);
+  }
 }
 init();
 </script>
