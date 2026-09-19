@@ -212,6 +212,10 @@ td{padding:8px 12px;font-size:13px;vertical-align:middle;}
 .settings-foot{margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:11px;color:var(--text-faint);}
 .settings-foot button{font-family:inherit;font-size:12px;color:var(--text-dim);background:none;border:1px solid var(--border);border-radius:7px;padding:6px 11px;cursor:pointer;}
 .settings-foot button:hover{color:var(--text);}
+.setting.stack{flex-direction:column;align-items:stretch;gap:8px;}
+.col-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.col-chips .chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-text);}
+.settings-body{max-height:85vh;overflow-y:auto;}
 
 footer{margin-top:20px;font-size:11.5px;color:var(--text-faint);font-family:'IBM Plex Mono',monospace;line-height:1.7;max-width:100ch;}
 
@@ -232,41 +236,25 @@ footer{margin-top:20px;font-size:11.5px;color:var(--text-faint);font-family:'IBM
   <header>
     <div>
       <h1>Roblox Radar</h1>
-      <div class="sub">Every Roblox game currently holding 1,000+ concurrent players, plus everything on the front-page charts &mdash; sorted by what each game actually is, so a genre-defining original never looks like the fifth copy of last month's hit.</div>
+      <div class="sub" data-i18n="subtitle"></div>
     </div>
     <div class="header-right">
       <div class="scan-meta" id="scanMeta"></div>
-      <button class="gear-btn" id="settingsBtn" type="button" aria-label="Settings" title="Settings">
+      <button class="gear-btn" id="settingsBtn" type="button" aria-label="Settings" title="Settings" data-i18n-title="settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
     </div>
   </header>
 
-  <div class="section-label">Pattern signals &mdash; click to filter</div>
+  <div class="section-label" data-i18n="signalsLabel"></div>
   <div class="signals" id="signals"></div>
 
   <div class="controls">
-    <input id="search" type="text" placeholder="Search game or creator&hellip;" aria-label="Search games">
-    <select id="catSelect" aria-label="Filter by category"><option value="">All categories</option></select>
-    <select id="ageSelect" aria-label="Filter by age">
-      <option value="">Any age</option>
-      <option value="30">Launched &lt; 30 days ago</option>
-      <option value="90">Launched &lt; 3 months ago</option>
-      <option value="365">Launched &lt; 1 year ago</option>
-      <option value="old">Older than 1 year</option>
-    </select>
-    <select id="sortSelect" aria-label="Sort games">
-      <option value="playing_desc">Players now &darr;</option>
-      <option value="playing_asc">Players now &uarr;</option>
-      <option value="visits_desc">Total visits &darr;</option>
-      <option value="vpd_desc">Visits per day &darr;</option>
-      <option value="like_desc">Rating &darr;</option>
-      <option value="like_asc">Rating &uarr;</option>
-      <option value="age_asc">Newest first</option>
-      <option value="age_desc">Oldest first</option>
-      <option value="name_asc">Name A&rarr;Z</option>
-    </select>
-    <button class="clear-btn" id="clearBtn" type="button">Reset</button>
+    <input id="search" type="text" data-i18n-placeholder="searchPh" aria-label="Search games">
+    <select id="catSelect" aria-label="Filter by category"></select>
+    <select id="ageSelect" aria-label="Filter by age"></select>
+    <select id="sortSelect" aria-label="Sort games"></select>
+    <button class="clear-btn" id="clearBtn" type="button" data-i18n="reset"></button>
   </div>
 
   <div class="chipbar" id="tagChips"></div>
@@ -274,20 +262,10 @@ footer{margin-top:20px;font-size:11.5px;color:var(--text-faint);font-family:'IBM
 
   <div class="table-scroll">
     <table>
-      <thead>
-        <tr>
-          <th class="sortable" data-k="name">Game</th>
-          <th>Category</th>
-          <th>Signals</th>
-          <th class="sortable" data-k="like" style="text-align:right;">Rating</th>
-          <th class="sortable" data-k="playing" style="text-align:right;">Players</th>
-          <th class="sortable" data-k="visits" style="text-align:right;">Visits</th>
-          <th class="sortable" data-k="age" style="text-align:right;">Age</th>
-        </tr>
-      </thead>
+      <thead id="thead"></thead>
       <tbody id="tbody"></tbody>
     </table>
-    <div class="more-row" id="moreRow" hidden><button class="more-btn" id="moreBtn" type="button">Show more</button></div>
+    <div class="more-row" id="moreRow" hidden><button class="more-btn" id="moreBtn" type="button"></button></div>
   </div>
 
   <footer id="footerNote"></footer>
@@ -300,119 +278,203 @@ footer{margin-top:20px;font-size:11.5px;color:var(--text-faint);font-family:'IBM
 <div class="overlay" id="settingsOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
   <div class="modal settings">
     <div class="settings-body">
-      <h2 class="settings-title" id="settingsTitle">Settings <button type="button" id="settingsClose" aria-label="Close">×</button></h2>
+      <h2 class="settings-title" id="settingsTitle"><span data-i18n="settings"></span> <button type="button" id="settingsClose" aria-label="Close">×</button></h2>
 
       <div class="setting">
-        <div class="lbl">Theme<span class="hint">System follows your OS setting</span></div>
-        <div class="seg" data-setting="theme">
-          <button type="button" data-v="system">System</button>
-          <button type="button" data-v="dark">Dark</button>
-          <button type="button" data-v="light">Light</button>
+        <div class="lbl"><span data-i18n="s_lang"></span><span class="hint" data-i18n="s_lang_h"></span></div>
+        <div class="seg" data-setting="lang">
+          <button type="button" data-v="es">Español</button>
+          <button type="button" data-v="en">English</button>
         </div>
       </div>
 
       <div class="setting">
-        <div class="lbl">Numbers<span class="hint">How players and visits are shown in the table</span></div>
+        <div class="lbl"><span data-i18n="s_theme"></span><span class="hint" data-i18n="s_theme_h"></span></div>
+        <div class="seg" data-setting="theme">
+          <button type="button" data-v="system" data-i18n="t_system"></button>
+          <button type="button" data-v="dark" data-i18n="t_dark"></button>
+          <button type="button" data-v="light" data-i18n="t_light"></button>
+        </div>
+      </div>
+
+      <div class="setting">
+        <div class="lbl"><span data-i18n="s_numbers"></span><span class="hint" data-i18n="s_numbers_h"></span></div>
         <div class="seg" data-setting="numbers">
           <button type="button" data-v="compact">1.6M</button>
           <button type="button" data-v="full">1,625,994</button>
         </div>
       </div>
 
+      <div class="setting stack">
+        <div class="lbl"><span data-i18n="s_cols"></span><span class="hint" data-i18n="s_cols_h"></span></div>
+        <div class="col-chips" id="colChips"></div>
+      </div>
+
       <div class="setting">
-        <div class="lbl">Rows per page<span class="hint">More rows means more images to load</span></div>
-        <div class="seg" data-setting="rows">
-          <button type="button" data-v="50">50</button>
-          <button type="button" data-v="150">150</button>
-          <button type="button" data-v="300">300</button>
-          <button type="button" data-v="all">All</button>
+        <div class="lbl"><span data-i18n="s_min"></span><span class="hint" data-i18n="s_min_h"></span></div>
+        <div class="seg" data-setting="minPlayers">
+          <button type="button" data-v="0" data-i18n="all"></button>
+          <button type="button" data-v="500">500+</button>
+          <button type="button" data-v="1000">1K+</button>
+          <button type="button" data-v="5000">5K+</button>
         </div>
       </div>
 
       <div class="setting">
-        <div class="lbl">Hide auto-classified games<span class="hint">Show only games whose category was hand-reviewed</span></div>
+        <div class="lbl"><span data-i18n="s_rows"></span><span class="hint" data-i18n="s_rows_h"></span></div>
+        <div class="seg" data-setting="rows">
+          <button type="button" data-v="50">50</button>
+          <button type="button" data-v="150">150</button>
+          <button type="button" data-v="300">300</button>
+          <button type="button" data-v="all" data-i18n="all"></button>
+        </div>
+      </div>
+
+      <div class="setting">
+        <div class="lbl"><span data-i18n="s_remember"></span><span class="hint" data-i18n="s_remember_h"></span></div>
+        <button type="button" class="switch" role="switch" aria-checked="false" data-setting="rememberFilters" aria-label="Remember filters"></button>
+      </div>
+
+      <div class="setting">
+        <div class="lbl"><span data-i18n="s_hideauto"></span><span class="hint" data-i18n="s_hideauto_h"></span></div>
         <button type="button" class="switch" role="switch" aria-checked="false" data-setting="hideAuto" aria-label="Hide auto-classified games"></button>
       </div>
 
       <div class="setting">
-        <div class="lbl">Chart time<span class="hint">Time zone for the player-history axis</span></div>
+        <div class="lbl"><span data-i18n="s_tz"></span><span class="hint" data-i18n="s_tz_h"></span></div>
         <div class="seg" data-setting="tz">
-          <button type="button" data-v="local">Local</button>
+          <button type="button" data-v="local" data-i18n="tz_local"></button>
           <button type="button" data-v="utc">UTC</button>
         </div>
       </div>
 
       <div class="settings-foot">
-        <span>Saved in this browser only.</span>
-        <button type="button" id="settingsReset">Reset to defaults</button>
+        <span data-i18n="s_saved"></span>
+        <button type="button" id="settingsReset" data-i18n="s_reset"></button>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-let DATA = null, GAMES = [], SAMPLE_TIMES = [];
+let DATA = null, GAMES = [], SAMPLE_TIMES = [], SAMPLE_MS = [];
 
-async function loadData(){
-  const bust = '?v=' + Math.floor(Date.now() / 3600e3);
-  const [gamesDoc, hist] = await Promise.all([
-    fetch('data/games.json' + bust).then(r => r.json()),
-    fetch('data/history.json' + bust).then(r => r.json())
-  ]);
-  const now = Date.now();
-  gamesDoc.games.forEach(g => {
-    g.age = g.created ? Math.floor((now - new Date(g.created)) / 86400e3) : null;
-    g.upd = g.updated ? Math.floor((now - new Date(g.updated)) / 86400e3) : null;
-    g.vpd = g.age ? Math.round(g.visits / g.age) : null;
-    g.hist = hist.series[String(g.id)] || [];
-  });
-  DATA = {generated: gamesDoc.generated, sampleTimes: hist.times || []};
-  GAMES = gamesDoc.games;
-  SAMPLE_TIMES = DATA.sampleTimes;
-}
-
-const CAT_LABELS = {
-  sim:'Simulator / Idle', rp:'Roleplay', shooter:'Shooter', fight:'Fighting / PvP',
-  action:'Open-world action', obby:'Obby / Platformer', sports:'Sports & Racing',
-  rpg:'RPG / Adventure', horror:'Horror / Survival', party:'Party / Casual',
-  strategy:'Strategy / TD', sandbox:'Sandbox / Building', fangame:'Fan game', other:'Tool / Other'
+/* ---------- i18n ---------- */
+const I18N = {
+  en: {
+    subtitle: "Every Roblox game currently holding real traffic, plus everything on the front-page charts — sorted by what each game actually is, so a genre-defining original never looks like the fifth copy of last month's hit.",
+    settings: "Settings", signalsLabel: "Pattern signals — click to filter", searchPh: "Search game or creator…",
+    reset: "Reset", all: "All", allCats: "All categories",
+    age_any: "Any age", age_30: "Launched < 30 days ago", age_90: "Launched < 3 months ago", age_365: "Launched < 1 year ago", age_old: "Older than 1 year",
+    sort_playing_desc: "Players now ↓", sort_playing_asc: "Players now ↑", sort_visits_desc: "Total visits ↓", sort_vpd_desc: "Visits per day ↓",
+    sort_like_desc: "Rating ↓", sort_like_asc: "Rating ↑", sort_age_asc: "Newest first", sort_age_desc: "Oldest first", sort_name_asc: "Name A→Z",
+    sort_favs_desc: "Favorites ↓", sort_upd_asc: "Recently updated",
+    h_game: "Game", h_cat: "Category", h_signals: "Signals", h_rating: "Rating", h_players: "Players", h_visits: "Visits", h_age: "Age",
+    h_favs: "Favorites", h_vpd: "Visits/day", h_upd: "Updated",
+    count: (n, total, p) => `${n} of ${total} games · ${p} players in them right now`,
+    empty: "No game matches these filters. Try removing one.", more: n => `Show more (${n} left)`,
+    noTag: "no pattern flagged", by: "by", unknown: "unknown", auto: "auto",
+    reviewed: "Hand-reviewed classification", autoTip: "Auto-classified by keyword rules, not yet reviewed",
+    openStats: n => `Open stats for ${n}`,
+    tracked: (n, p) => `<b>${n}</b> games tracked · <b>${p}</b> concurrent players`, lastRefresh: d => `last refresh ${d} UTC · refreshes daily`,
+    footer: 'Click any thumbnail for full stats, the player-history chart, the creator\'s Roblox group and any social links. Counts come from Roblox\'s public game and thumbnail APIs and are refreshed once a day at 20:00 UTC. Categories and pattern signals were assigned by reading each game\'s name, description and genre — a research starting point, not a verdict. "Copy of another hit" means the core loop visibly follows an earlier game; "Borrowed IP" flags external copyrighted characters or brands.',
+    loading: "Loading radar data…", loadErr: "Could not load data/games.json — if you opened this file directly, serve the folder over http (GitHub Pages does this for you).",
+    st_now: "Players now", st_rank: "Rank by players", st_peak: "Peak on record", st_visits: "Total visits", st_vpd: "Visits / day", st_rating: "Rating",
+    st_votes: "Votes", st_favs: "Favorites", st_age: "Age", st_upd: "Last updated", st_server: "Server size", st_mat: "Maturity",
+    today: "today", daysAgo: n => `${n}d ago`, players: "players", classifiedAs: "classified as", autoNote: "(auto, by keyword rules — not yet hand-reviewed)", added: "added",
+    openRoblox: "Open on Roblox", group: "Roblox group", profile: "Creator profile",
+    noSocials: "No Discord or social link found for this game. Roblox only shows a game's Social Links to logged-in users 13+ — check the game page.",
+    ch_title: "Concurrent players", ch_now: "now", ch_peak: "range peak", ch_low: "range low", ch_avg: "range avg", ch_allPeak: "all-time peak on record",
+    ch_notEnough: "Not enough history recorded yet", ch_empty: "Not enough readings for this range yet.", ch_peakLbl: "peak",
+    ch_note: (n, h) => `${n} readings across ${h} of monitoring. Roblox publishes no player history, so this chart only grows as the radar keeps sampling — day, week and month views unlock as history accumulates.`,
+    underHour: "under an hour", hours: h => `${h} h`,
+    r_24h: "24h", r_7d: "7d", r_30d: "1mo", r_1y: "1y", r_all: "All",
+    s_lang: "Language", s_lang_h: "Interface language", s_theme: "Theme", s_theme_h: "System follows your OS setting",
+    t_system: "System", t_dark: "Dark", t_light: "Light",
+    s_numbers: "Numbers", s_numbers_h: "How players and visits are shown in the table",
+    s_cols: "Visible columns", s_cols_h: "Game, category, signals and players are always shown",
+    s_min: "Minimum players", s_min_h: "Hide games below this many concurrent players",
+    s_rows: "Rows per page", s_rows_h: "More rows means more images to load",
+    s_remember: "Remember filters", s_remember_h: "Reopen the page with the last search, filters and sort",
+    s_hideauto: "Hide auto-classified games", s_hideauto_h: "Show only games whose category was hand-reviewed",
+    s_tz: "Chart time", s_tz_h: "Time zone for the player-history axis", tz_local: "Local",
+    s_saved: "Saved in this browser only.", s_reset: "Reset to defaults",
+    cats: {sim:'Simulator / Idle', rp:'Roleplay', shooter:'Shooter', fight:'Fighting / PvP', action:'Open-world action', obby:'Obby / Platformer', sports:'Sports & Racing', rpg:'RPG / Adventure', horror:'Horror / Survival', party:'Party / Casual', strategy:'Strategy / TD', sandbox:'Sandbox / Building', fangame:'Fan game', other:'Tool / Other'},
+    tags: {'brainrot':'Brainrot','mm2-clone':'MM2 clone','mm2-original':'MM2 (the original)','minecraft-clone':'Minecraft-derived','tower':'Tower climb','tower-defense':'Tower defense','steal-pattern':'"Steal a X" formula','plus1-pattern':'"+1 per click" formula','duels-pattern':'"DUELS" arena formula','rng-gacha':'RNG / gacha loop','copycat':'Copy of another hit','licensed-ip':'Borrowed IP','flagship':'Original flagship','anime':'Anime','meme':'Meme premise'},
+    signals: {'brainrot':'Brainrot themed','mm2-clone':'MM2 clones','minecraft-clone':'Minecraft-derived','tower':'Tower climbers','steal-pattern':'"Steal a X" formula','plus1-pattern':'"+1 per click" formula','duels-pattern':'"DUELS" arenas','copycat':'Copies of other hits','licensed-ip':'Borrowed IP','flagship':'Original flagships'},
+    socials: {discord:'Discord', youtube:'YouTube', x:'X / Twitter', tiktok:'TikTok', twitch:'Twitch', facebook:'Facebook', guilded:'Guilded', group:'Linked group'},
+    months: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  },
+  es: {
+    subtitle: "Todos los juegos de Roblox con tráfico real ahora mismo, más los de las listas de portada — ordenados por lo que cada juego es en realidad, para que un original que define un género nunca parezca la quinta copia del éxito del mes pasado.",
+    settings: "Configuración", signalsLabel: "Señales de patrón — clic para filtrar", searchPh: "Buscar juego o creador…",
+    reset: "Limpiar", all: "Todos", allCats: "Todas las categorías",
+    age_any: "Cualquier edad", age_30: "Lanzado hace < 30 días", age_90: "Lanzado hace < 3 meses", age_365: "Lanzado hace < 1 año", age_old: "Más de 1 año",
+    sort_playing_desc: "Jugadores ahora ↓", sort_playing_asc: "Jugadores ahora ↑", sort_visits_desc: "Visitas totales ↓", sort_vpd_desc: "Visitas por día ↓",
+    sort_like_desc: "Valoración ↓", sort_like_asc: "Valoración ↑", sort_age_asc: "Más nuevos primero", sort_age_desc: "Más antiguos primero", sort_name_asc: "Nombre A→Z",
+    sort_favs_desc: "Favoritos ↓", sort_upd_asc: "Actualizados recientemente",
+    h_game: "Juego", h_cat: "Categoría", h_signals: "Señales", h_rating: "Valoración", h_players: "Jugadores", h_visits: "Visitas", h_age: "Edad",
+    h_favs: "Favoritos", h_vpd: "Visitas/día", h_upd: "Actualizado",
+    count: (n, total, p) => `${n} de ${total} juegos · ${p} jugadores en ellos ahora mismo`,
+    empty: "Ningún juego coincide con estos filtros. Prueba quitando uno.", more: n => `Mostrar más (quedan ${n})`,
+    noTag: "sin patrón detectado", by: "de", unknown: "desconocido", auto: "auto",
+    reviewed: "Clasificación revisada a mano", autoTip: "Clasificado automáticamente por reglas, aún sin revisar",
+    openStats: n => `Ver estadísticas de ${n}`,
+    tracked: (n, p) => `<b>${n}</b> juegos seguidos · <b>${p}</b> jugadores concurrentes`, lastRefresh: d => `última actualización ${d} UTC · se actualiza a diario`,
+    footer: 'Haz clic en cualquier miniatura para ver estadísticas completas, la gráfica de jugadores, el grupo de Roblox del creador y sus redes. Los datos vienen de las APIs públicas de Roblox y se actualizan una vez al día a las 20:00 UTC. Las categorías y señales se asignaron leyendo nombre, descripción y género de cada juego — son un punto de partida para investigar, no un veredicto. "Copia de otro éxito" significa que la mecánica central sigue visiblemente a un juego anterior; "IP prestada" marca personajes o marcas con derechos de terceros.',
+    loading: "Cargando datos del radar…", loadErr: "No se pudo cargar data/games.json — si abriste el archivo directamente, sirve la carpeta por http (GitHub Pages lo hace por ti).",
+    st_now: "Jugadores ahora", st_rank: "Puesto por jugadores", st_peak: "Pico registrado", st_visits: "Visitas totales", st_vpd: "Visitas / día", st_rating: "Valoración",
+    st_votes: "Votos", st_favs: "Favoritos", st_age: "Edad", st_upd: "Última actualización", st_server: "Tamaño de servidor", st_mat: "Madurez",
+    today: "hoy", daysAgo: n => `hace ${n}d`, players: "jugadores", classifiedAs: "clasificado como", autoNote: "(auto, por reglas — aún sin revisar a mano)", added: "añadido",
+    openRoblox: "Abrir en Roblox", group: "Grupo de Roblox", profile: "Perfil del creador",
+    noSocials: "No se encontró Discord ni redes para este juego. Roblox solo muestra los Social Links a usuarios con sesión y 13+ — revisa la página del juego.",
+    ch_title: "Jugadores concurrentes", ch_now: "ahora", ch_peak: "pico del rango", ch_low: "mínimo del rango", ch_avg: "promedio", ch_allPeak: "pico histórico registrado",
+    ch_notEnough: "Aún no hay suficiente historial", ch_empty: "Aún no hay suficientes lecturas para este rango.", ch_peakLbl: "pico",
+    ch_note: (n, h) => `${n} lecturas a lo largo de ${h} de seguimiento. Roblox no publica historial de jugadores, así que esta gráfica solo crece mientras el radar sigue midiendo — las vistas de día, semana y mes se activan al acumular historial.`,
+    underHour: "menos de una hora", hours: h => `${h} h`,
+    r_24h: "24h", r_7d: "7d", r_30d: "1m", r_1y: "1a", r_all: "Todo",
+    s_lang: "Idioma", s_lang_h: "Idioma de la interfaz", s_theme: "Tema", s_theme_h: "Sistema sigue el ajuste de tu equipo",
+    t_system: "Sistema", t_dark: "Oscuro", t_light: "Claro",
+    s_numbers: "Números", s_numbers_h: "Cómo se muestran jugadores y visitas en la tabla",
+    s_cols: "Columnas visibles", s_cols_h: "Juego, categoría, señales y jugadores siempre se muestran",
+    s_min: "Jugadores mínimos", s_min_h: "Oculta juegos por debajo de esta cantidad de jugadores",
+    s_rows: "Filas por página", s_rows_h: "Más filas implica cargar más imágenes",
+    s_remember: "Recordar filtros", s_remember_h: "Abrir la página con la última búsqueda, filtros y orden",
+    s_hideauto: "Ocultar juegos clasificados automáticamente", s_hideauto_h: "Mostrar solo juegos con categoría revisada a mano",
+    s_tz: "Hora de la gráfica", s_tz_h: "Zona horaria del eje de la gráfica", tz_local: "Local",
+    s_saved: "Se guarda solo en este navegador.", s_reset: "Restablecer",
+    cats: {sim:'Simulador / Idle', rp:'Roleplay', shooter:'Shooter', fight:'Lucha / PvP', action:'Acción mundo abierto', obby:'Obby / Plataformas', sports:'Deportes y carreras', rpg:'RPG / Aventura', horror:'Terror / Supervivencia', party:'Fiesta / Casual', strategy:'Estrategia / TD', sandbox:'Sandbox / Construcción', fangame:'Fan game', other:'Herramienta / Otro'},
+    tags: {'brainrot':'Brainrot','mm2-clone':'Clon de MM2','mm2-original':'MM2 (el original)','minecraft-clone':'Derivado de Minecraft','tower':'Torre','tower-defense':'Tower defense','steal-pattern':'Fórmula "Steal a X"','plus1-pattern':'Fórmula "+1 por clic"','duels-pattern':'Fórmula "DUELS"','rng-gacha':'Bucle RNG / gacha','copycat':'Copia de otro éxito','licensed-ip':'IP prestada','flagship':'Original insignia','anime':'Anime','meme':'Premisa meme'},
+    signals: {'brainrot':'Temática brainrot','mm2-clone':'Clones de MM2','minecraft-clone':'Derivados de Minecraft','tower':'Torres','steal-pattern':'Fórmula "Steal a X"','plus1-pattern':'Fórmula "+1 por clic"','duels-pattern':'Arenas "DUELS"','copycat':'Copias de otros éxitos','licensed-ip':'IP prestada','flagship':'Originales insignia'},
+    socials: {discord:'Discord', youtube:'YouTube', x:'X / Twitter', tiktok:'TikTok', twitch:'Twitch', facebook:'Facebook', guilded:'Guilded', group:'Grupo vinculado'},
+    months: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+  }
 };
-const TAG_META = {
-  'brainrot':{label:'Brainrot',cls:'warn'},
-  'mm2-clone':{label:'MM2 clone',cls:'risk'},
-  'mm2-original':{label:'MM2 (the original)',cls:'good'},
-  'minecraft-clone':{label:'Minecraft-derived',cls:'risk'},
-  'tower':{label:'Tower climb',cls:'info'},
-  'tower-defense':{label:'Tower defense',cls:'info'},
-  'steal-pattern':{label:'"Steal a X" formula',cls:'warn'},
-  'plus1-pattern':{label:'"+1 per click" formula',cls:'warn'},
-  'duels-pattern':{label:'"DUELS" arena formula',cls:'warn'},
-  'rng-gacha':{label:'RNG / gacha loop',cls:'info'},
-  'copycat':{label:'Copy of another hit',cls:'risk'},
-  'licensed-ip':{label:'Borrowed IP',cls:'risk'},
-  'flagship':{label:'Original flagship',cls:'good'},
-  'anime':{label:'Anime',cls:'info'},
-  'meme':{label:'Meme premise',cls:'warn'}
-};
+function t(key){ const d = I18N[settings.lang] || I18N.en; return d[key] ?? I18N.en[key] ?? key; }
+const TAG_CLS = {'brainrot':'warn','mm2-clone':'risk','mm2-original':'good','minecraft-clone':'risk','tower':'info','tower-defense':'info','steal-pattern':'warn','plus1-pattern':'warn','duels-pattern':'warn','rng-gacha':'info','copycat':'risk','licensed-ip':'risk','flagship':'good','anime':'info','meme':'warn'};
 const SIGNAL_DEFS = [
-  {key:'brainrot',tone:'warn',label:'Brainrot themed'},
-  {key:'mm2-clone',tone:'risk',label:'MM2 clones'},
-  {key:'minecraft-clone',tone:'risk',label:'Minecraft-derived'},
-  {key:'tower',tone:'info',label:'Tower climbers'},
-  {key:'steal-pattern',tone:'warn',label:'"Steal a X" formula'},
-  {key:'plus1-pattern',tone:'warn',label:'"+1 per click" formula'},
-  {key:'duels-pattern',tone:'warn',label:'"DUELS" arenas'},
-  {key:'copycat',tone:'risk',label:'Copies of other hits'},
-  {key:'licensed-ip',tone:'risk',label:'Borrowed IP'},
-  {key:'flagship',tone:'good',label:'Original flagships'}
+  {key:'brainrot',tone:'warn'},{key:'mm2-clone',tone:'risk'},{key:'minecraft-clone',tone:'risk'},{key:'tower',tone:'info'},
+  {key:'steal-pattern',tone:'warn'},{key:'plus1-pattern',tone:'warn'},{key:'duels-pattern',tone:'warn'},
+  {key:'copycat',tone:'risk'},{key:'licensed-ip',tone:'risk'},{key:'flagship',tone:'good'}
 ];
-const SOCIAL_LABELS = {discord:'Discord', youtube:'YouTube', x:'X / Twitter', tiktok:'TikTok', twitch:'Twitch', facebook:'Facebook', guilded:'Guilded', group:'Linked group'};
+const catLabel = c => t('cats')[c] || c;
+const tagLabel = k => t('tags')[k] || k;
 
 /* ---------- settings (per browser) ---------- */
-const SETTINGS_KEY = 'radar.settings.v1';
-const DEFAULT_SETTINGS = {theme:'system', numbers:'compact', rows:'150', hideAuto:false, tz:'local'};
-let settings = {...DEFAULT_SETTINGS};
-try { Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch (e) {}
+const SETTINGS_KEY = 'radar.settings.v2';
+const FILTERS_KEY = 'radar.filters.v1';
+const DEFAULT_SETTINGS = {
+  lang: (navigator.language || 'en').toLowerCase().startsWith('es') ? 'es' : 'en',
+  theme:'system', numbers:'compact', rows:'150', hideAuto:false, tz:'local',
+  minPlayers:'0', rememberFilters:false,
+  cols:{rating:true, visits:true, age:true, favs:false, vpd:false, upd:false}
+};
+let settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+try {
+  const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+  Object.assign(settings, saved);
+  settings.cols = {...DEFAULT_SETTINGS.cols, ...(saved.cols || {})};
+} catch (e) {}
 function saveSettings(){ try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {} }
 let PAGE = settings.rows === 'all' ? Infinity : Number(settings.rows) || 150;
 function applyTheme(){
@@ -425,12 +487,27 @@ applyTheme();
 const defaultState = () => ({search:'', cat:'', age:'', tags:new Set(), sort:'playing_desc', shown:PAGE});
 let state = defaultState();
 
+function saveFilters(){
+  if(!settings.rememberFilters) return;
+  try { localStorage.setItem(FILTERS_KEY, JSON.stringify({search:state.search, cat:state.cat, age:state.age, tags:[...state.tags], sort:state.sort})); } catch (e) {}
+}
+function loadFilters(){
+  if(!settings.rememberFilters) return;
+  try {
+    const f = JSON.parse(localStorage.getItem(FILTERS_KEY) || 'null');
+    if(!f) return;
+    state.search = f.search || ''; state.cat = f.cat || ''; state.age = f.age || '';
+    state.tags = new Set(f.tags || []); state.sort = f.sort || 'playing_desc';
+  } catch (e) {}
+}
+
 function indexGames(){
   GAMES.forEach((g,i) => { g._i = i; });
   [...GAMES].sort((a,b)=>(b.playing||0)-(a.playing||0)).forEach((g,i)=>{ g._rank = i+1; });
-  SAMPLE_MS = SAMPLE_TIMES.map(t => new Date(t).getTime());
+  SAMPLE_MS = SAMPLE_TIMES.map(x => new Date(x).getTime());
 }
 
+/* ---------- formatting ---------- */
 function fmtNum(n){
   if(n == null) return '—';
   if(n >= 1e9) return (n/1e9).toFixed(2).replace(/\.?0+$/,'')+'B';
@@ -438,28 +515,97 @@ function fmtNum(n){
   if(n >= 1e3) return (n/1e3).toFixed(1).replace(/\.0$/,'')+'K';
   return String(n);
 }
-function fmtFull(n){ return n == null ? '—' : n.toLocaleString('en-US'); }
+function fmtFull(n){ return n == null ? '—' : n.toLocaleString(settings.lang === 'es' ? 'es-ES' : 'en-US'); }
 function fmtTable(n){ return settings.numbers === 'full' ? fmtFull(n) : fmtNum(n); }
 function fmtAge(d){
   if(d == null) return '—';
-  if(d < 31) return d+'d';
-  if(d < 365) return Math.round(d/30.4)+'mo';
+  const es = settings.lang === 'es';
+  if(d < 31) return d + 'd';
+  if(d < 365) return Math.round(d/30.4) + (es ? 'm' : 'mo');
   const y = d/365;
-  return (y < 10 ? y.toFixed(1).replace(/\.0$/,'') : Math.round(y))+'y';
+  return (y < 10 ? y.toFixed(1).replace(/\.0$/,'') : Math.round(y)) + (es ? 'a' : 'y');
 }
+function fmtUpd(d){ return d == null ? '—' : d === 0 ? t('today') : t('daysAgo')(d); }
 function ratingClass(p){ return p == null ? '' : p >= 92 ? 'hi' : p >= 82 ? 'mid' : 'lo'; }
 function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function tagHtml(t){ const m = TAG_META[t] || {label:t,cls:'info'}; return `<span class="tag ${m.cls}">${m.label}</span>`; }
-
-let SAMPLE_MS = [];
-function spriteHtml(g, size){
+function tagHtml(k){ return `<span class="tag ${TAG_CLS[k] || 'info'}">${tagLabel(k)}</span>`; }
+function imgHtml(g, size){
   const src = g.icon || g.thumb || '';
   return `<img src="${esc(src)}" alt="" width="${size}" height="${size}" loading="lazy" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:${size > 60 ? 18 : 0}px" onerror="this.style.visibility='hidden'">`;
+}
+
+/* ---------- static text ---------- */
+const AGE_OPTS = [['', 'age_any'], ['30', 'age_30'], ['90', 'age_90'], ['365', 'age_365'], ['old', 'age_old']];
+const SORT_OPTS = ['playing_desc','playing_asc','visits_desc','vpd_desc','like_desc','like_asc','favs_desc','upd_asc','age_asc','age_desc','name_asc'];
+const COLS = [
+  {k:'rating', h:'h_rating', sort:'like'},
+  {k:'players', h:'h_players', sort:'playing', always:true},
+  {k:'visits', h:'h_visits', sort:'visits'},
+  {k:'favs', h:'h_favs', sort:'favs'},
+  {k:'vpd', h:'h_vpd', sort:'vpd'},
+  {k:'upd', h:'h_upd', sort:'upd'},
+  {k:'age', h:'h_age', sort:'age'}
+];
+function visibleCols(){ return COLS.filter(c => c.always || settings.cols[c.k]); }
+
+function applyLanguage(){
+  document.documentElement.lang = settings.lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
+
+  const age = document.getElementById('ageSelect');
+  age.innerHTML = AGE_OPTS.map(([v,k]) => `<option value="${v}">${t(k)}</option>`).join('');
+  age.value = state.age;
+  const sort = document.getElementById('sortSelect');
+  sort.innerHTML = SORT_OPTS.map(v => `<option value="${v}">${t('sort_'+v)}</option>`).join('');
+  sort.value = SORT_OPTS.includes(state.sort) ? state.sort : '';
+  document.getElementById('search').value = state.search;
+
+  buildCatSelect();
+  buildTableHead();
+  buildColChips();
+  if(GAMES.length){
+    buildSignals(); buildTagChips();
+    const totalPlayers = GAMES.reduce((s,g) => s + (g.playing||0), 0);
+    const scanned = new Date(DATA.generated).toISOString().slice(0,16).replace('T',' ');
+    document.getElementById('scanMeta').innerHTML = t('tracked')(GAMES.length, fmtNum(totalPlayers)) + '<br>' + t('lastRefresh')(scanned);
+    document.getElementById('footerNote').textContent = t('footer');
+    render();
+    if(currentGame) openModal(currentGame._i, currentRange);
+  }
+}
+
+function buildTableHead(){
+  const cols = visibleCols().map(c =>
+    `<th class="sortable" data-k="${c.sort}" style="text-align:right;">${t(c.h)}</th>`).join('');
+  document.getElementById('thead').innerHTML = `<tr>
+    <th class="sortable" data-k="name">${t('h_game')}</th><th>${t('h_cat')}</th><th>${t('h_signals')}</th>${cols}</tr>`;
+  document.querySelectorAll('thead th.sortable').forEach(th => th.addEventListener('click', () => {
+    const k = th.dataset.k;
+    const def = {playing:'desc', visits:'desc', like:'desc', favs:'desc', vpd:'desc', upd:'asc', age:'asc', name:'asc'}[k];
+    const [cf, cd] = state.sort.split('_');
+    state.sort = `${k}_${cf === k ? (cd === 'desc' ? 'asc' : 'desc') : def}`;
+    const sel = document.getElementById('sortSelect');
+    sel.value = SORT_OPTS.includes(state.sort) ? state.sort : '';
+    state.shown = PAGE; render();
+  }));
+}
+function buildColChips(){
+  const el = document.getElementById('colChips');
+  el.innerHTML = COLS.filter(c => !c.always).map(c =>
+    `<button type="button" class="chip ${settings.cols[c.k] ? 'on' : ''}" data-col="${c.k}" aria-pressed="${!!settings.cols[c.k]}">${t(c.h)}</button>`).join('');
+  el.querySelectorAll('[data-col]').forEach(b => b.addEventListener('click', () => {
+    settings.cols[b.dataset.col] = !settings.cols[b.dataset.col];
+    saveSettings(); buildColChips(); buildTableHead(); if(GAMES.length) render();
+  }));
 }
 
 /* ---------- filters + table ---------- */
 function applyFilters(){
   let rows = GAMES;
+  const minP = Number(settings.minPlayers) || 0;
+  if(minP) rows = rows.filter(g => (g.playing||0) >= minP);
   if(state.search){
     const q = state.search.toLowerCase();
     rows = rows.filter(g => g.name.toLowerCase().includes(q) || (g.creator||'').toLowerCase().includes(q));
@@ -470,7 +616,7 @@ function applyFilters(){
       ? rows.filter(g => g.age != null && g.age >= 365)
       : rows.filter(g => g.age != null && g.age < Number(state.age));
   }
-  if(state.tags.size) rows = rows.filter(g => [...state.tags].every(t => g.tags.includes(t)));
+  if(state.tags.size) rows = rows.filter(g => [...state.tags].every(x => g.tags.includes(x)));
   if(settings.hideAuto) rows = rows.filter(g => g.src === 'review');
   const [field, dir] = state.sort.split('_');
   return [...rows].sort((a,b) => {
@@ -478,70 +624,71 @@ function applyFilters(){
       const r = a.name.toLowerCase().localeCompare(b.name.toLowerCase());
       return dir === 'asc' ? r : -r;
     }
-    const av = a[field] ?? 0, bv = b[field] ?? 0;
+    const miss = dir === 'asc' ? Infinity : -Infinity;
+    const av = a[field] ?? miss, bv = b[field] ?? miss;
     return dir === 'asc' ? av - bv : bv - av;
   });
 }
 
+function cellHtml(g, c){
+  switch(c.k){
+    case 'rating': return `<td class="rating ${ratingClass(g.like)}">${g.like != null ? g.like+'%' : '—'}</td>`;
+    case 'players': return `<td class="num">${fmtTable(g.playing)}</td>`;
+    case 'visits': return `<td class="num">${fmtTable(g.visits)}</td>`;
+    case 'favs': return `<td class="num">${fmtTable(g.favs)}</td>`;
+    case 'vpd': return `<td class="num">${fmtTable(g.vpd)}</td>`;
+    case 'upd': return `<td class="age ${g.upd != null && g.upd <= 7 ? 'fresh' : ''}">${fmtUpd(g.upd)}</td>`;
+    case 'age': return `<td class="age ${g.age != null && g.age < 60 ? 'fresh' : ''}">${fmtAge(g.age)}</td>`;
+  }
+  return '<td></td>';
+}
 function rowHtml(g){
-  const tags = g.tags.length ? g.tags.map(tagHtml).join('') : '<span class="tag none">no pattern flagged</span>';
+  const tags = g.tags.length ? g.tags.map(tagHtml).join('') : `<span class="tag none">${t('noTag')}</span>`;
+  const reviewed = g.src === 'review';
   return `<tr>
     <td><div class="game-cell">
-      <button class="thumb-btn" data-open="${g._i}" title="Open stats for ${esc(g.name)}" aria-label="Open stats for ${esc(g.name)}">
-        ${spriteHtml(g, 44)}
-      </button>
+      <button class="thumb-btn" data-open="${g._i}" title="${esc(t('openStats')(g.name))}" aria-label="${esc(t('openStats')(g.name))}">${imgHtml(g, 44)}</button>
       <div class="game-text">
         <button class="game-name" data-open="${g._i}">${esc(g.name)}</button>
-        <span class="creator">by ${esc(g.creator || 'unknown')}${g.verified ? ' ✓' : ''}</span>
+        <span class="creator">${t('by')} ${esc(g.creator || t('unknown'))}${g.verified ? ' ✓' : ''}</span>
       </div>
     </div></td>
-    <td><span class="cat-pill" title="${g.src === 'review' ? 'Hand-reviewed classification' : 'Auto-classified by keyword rules, not yet reviewed'}">${CAT_LABELS[g.cat] || g.cat}${g.src === 'review' ? '' : ' <span class="auto">auto</span>'}</span></td>
+    <td><span class="cat-pill" title="${reviewed ? t('reviewed') : t('autoTip')}">${catLabel(g.cat)}${reviewed ? '' : ` <span class="auto">${t('auto')}</span>`}</span></td>
     <td><div class="tagset">${tags}</div></td>
-    <td class="rating ${ratingClass(g.like)}">${g.like != null ? g.like+'%' : '—'}</td>
-    <td class="num">${fmtTable(g.playing)}</td>
-    <td class="num">${fmtTable(g.visits)}</td>
-    <td class="age ${g.age != null && g.age < 60 ? 'fresh' : ''}">${fmtAge(g.age)}</td>
+    ${visibleCols().map(c => cellHtml(g, c)).join('')}
   </tr>`;
 }
 
 function render(){
-  document.querySelectorAll('.signal, .chip').forEach(n => {
+  saveFilters();
+  document.querySelectorAll('.signal, .chip[data-tag]').forEach(n => {
     const on = state.tags.has(n.dataset.tag);
     n.classList.toggle(n.classList.contains('signal') ? 'active' : 'on', on);
     n.setAttribute('aria-pressed', String(on));
   });
-  document.querySelectorAll('thead th.sortable').forEach(th => {
-    th.classList.toggle('sorted', th.dataset.k === state.sort.split('_')[0]);
-  });
+  document.querySelectorAll('thead th.sortable').forEach(th => th.classList.toggle('sorted', th.dataset.k === state.sort.split('_')[0]));
 
   const rows = applyFilters();
   const players = rows.reduce((s,g) => s + (g.playing||0), 0);
-  document.getElementById('countRow').textContent =
-    `${rows.length} of ${GAMES.length} games · ${fmtNum(players)} players in them right now`;
+  document.getElementById('countRow').textContent = t('count')(rows.length, GAMES.length, fmtNum(players));
 
   const tbody = document.getElementById('tbody');
   const moreRow = document.getElementById('moreRow');
+  const span = 3 + visibleCols().length;
   if(!rows.length){
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">No game matches these filters. Try removing one.</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${span}"><div class="empty-state">${t('empty')}</div></td></tr>`;
     moreRow.hidden = true;
     return;
   }
-  const slice = rows.slice(0, state.shown);
-  tbody.innerHTML = slice.map(rowHtml).join('');
+  tbody.innerHTML = rows.slice(0, state.shown).map(rowHtml).join('');
   moreRow.hidden = rows.length <= state.shown;
-  document.getElementById('moreBtn').textContent = `Show more (${rows.length - state.shown} left)`;
+  document.getElementById('moreBtn').textContent = t('more')(rows.length - state.shown);
 }
 
-/* ---------- chart ---------- */
 /* ---------- player history chart (SteamDB-style) ---------- */
 const RANGES = [
-  {key:'24h', label:'24h', ms:24*3600e3},
-  {key:'7d',  label:'7d',  ms:7*86400e3},
-  {key:'30d', label:'1mo', ms:30*86400e3},
-  {key:'1y',  label:'1y',  ms:365*86400e3},
-  {key:'all', label:'All', ms:Infinity}
+  {key:'24h', ms:24*3600e3}, {key:'7d', ms:7*86400e3}, {key:'30d', ms:30*86400e3}, {key:'1y', ms:365*86400e3}, {key:'all', ms:Infinity}
 ];
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const pad2 = n => String(n).padStart(2,'0');
 function dparts(ms){
   const d = new Date(ms);
@@ -552,9 +699,9 @@ function dparts(ms){
 function fmtTime(ms, withDate){
   const p = dparts(ms);
   const hm = `${pad2(p.h)}:${pad2(p.m)}${settings.tz === 'utc' ? 'Z' : ''}`;
-  return withDate ? `${MONTHS[p.mo]} ${p.day} ${hm}` : hm;
+  return withDate ? `${t('months')[p.mo]} ${p.day} ${hm}` : hm;
 }
-function fmtDateShort(ms){ const p = dparts(ms); return `${MONTHS[p.mo]} ${p.day}`; }
+function fmtDateShort(ms){ const p = dparts(ms); return `${t('months')[p.mo]} ${p.day}`; }
 function niceStep(span, target){
   const raw = span / target, mag = Math.pow(10, Math.floor(Math.log10(raw)));
   for(const m of [1,2,2.5,5,10]) if(raw <= m*mag) return m*mag;
@@ -582,25 +729,25 @@ function chartHtml(g, rangeKey){
 
   const buttons = RANGES.map(r => {
     const ok = pointsInRange(all, r).length >= 2;
-    return `<button type="button" class="range-btn ${r.key === range.key ? 'on' : ''}" data-range="${r.key}" ${ok ? '' : 'disabled title="Not enough history recorded yet"'}>${r.label}</button>`;
+    return `<button type="button" class="range-btn ${r.key === range.key ? 'on' : ''}" data-range="${r.key}" ${ok ? '' : `disabled title="${t('ch_notEnough')}"`}>${t('r_'+r.key)}</button>`;
   }).join('');
 
   let body;
   if(pts.length < 2){
-    body = `<div class="chart-empty">Not enough readings for this range yet.</div>`;
+    body = `<div class="chart-empty">${t('ch_empty')}</div>`;
+    chartHtml._geom = null;
   } else {
     const W = 680, H = 200, PL = 56, PR = 14, PT = 14, PB = 28;
     const t0 = pts[0].t, t1 = pts[pts.length-1].t, span = Math.max(1, t1 - t0);
     const vals = pts.map(p => p.v);
-    let vmin = Math.min(...vals), vmax = Math.max(...vals);
+    const vmin = Math.min(...vals), vmax = Math.max(...vals);
     const ystep = niceStep(Math.max(1, vmax - vmin) * 1.25, 4);
     let ylo = Math.floor(vmin / ystep) * ystep, yhi = Math.ceil(vmax / ystep) * ystep;
     if(ylo === yhi) yhi = ylo + ystep;
     if(ylo < 0) ylo = 0;
-    const x = t => PL + ((t - t0) / span) * (W - PL - PR);
+    const x = tt => PL + ((tt - t0) / span) * (W - PL - PR);
     const y = v => PT + (1 - (v - ylo) / (yhi - ylo)) * (H - PT - PB);
 
-    // break the line across long gaps (sleep, outages)
     const gaps = pts.slice(1).map((p,i) => p.t - pts[i].t).sort((a,b)=>a-b);
     const median = gaps[Math.floor(gaps.length/2)] || 1;
     const gapLimit = Math.max(median * 3, 20*60e3);
@@ -628,22 +775,22 @@ function chartHtml(g, rangeKey){
     const nx = 5;
     let xgrid = '';
     for(let i = 0; i <= nx; i++){
-      const t = t0 + span * i / nx;
+      const tt = t0 + span * i / nx;
       const anchor = i === 0 ? 'start' : i === nx ? 'end' : 'middle';
-      xgrid += `<line x1="${x(t).toFixed(1)}" y1="${PT}" x2="${x(t).toFixed(1)}" y2="${H-PB}" stroke="var(--border)" stroke-width="1" stroke-dasharray="2 3"/>
-        <text x="${x(t).toFixed(1)}" y="${H-9}" text-anchor="${anchor}" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--text-faint)">${span > 3*86400e3 ? fmtDateShort(t) : fmtTime(t, withDate)}</text>`;
+      xgrid += `<line x1="${x(tt).toFixed(1)}" y1="${PT}" x2="${x(tt).toFixed(1)}" y2="${H-PB}" stroke="var(--border)" stroke-width="1" stroke-dasharray="2 3"/>
+        <text x="${x(tt).toFixed(1)}" y="${H-9}" text-anchor="${anchor}" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--text-faint)">${span > 3*86400e3 ? fmtDateShort(tt) : fmtTime(tt, withDate)}</text>`;
     }
     const peak = pts.reduce((m,p) => p.v > m.v ? p : m, pts[0]);
     const last = pts[pts.length-1];
     const peakLabelX = Math.min(Math.max(x(peak.t), PL + 60), W - PR - 60);
     body = `<div class="chart-wrap" id="chartWrap">
-      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Concurrent players over time" id="chartSvg">
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('ch_title')}" id="chartSvg">
         ${ygrid}${xgrid}
         <path d="${area.trim()}" fill="color-mix(in srgb, var(--accent) 18%, transparent)" stroke="none"/>
         <path d="${line.trim()}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
         <line x1="${x(peak.t).toFixed(1)}" y1="${y(peak.v).toFixed(1)}" x2="${x(peak.t).toFixed(1)}" y2="${PT}" stroke="var(--warn)" stroke-width="1" stroke-dasharray="3 3"/>
         <circle cx="${x(peak.t).toFixed(1)}" cy="${y(peak.v).toFixed(1)}" r="4" fill="var(--warn)"/>
-        <text x="${peakLabelX.toFixed(1)}" y="${PT+9}" text-anchor="middle" font-size="10" font-family="IBM Plex Mono, monospace" font-weight="600" fill="var(--warn)">peak ${fmtFull(peak.v)}</text>
+        <text x="${peakLabelX.toFixed(1)}" y="${PT+9}" text-anchor="middle" font-size="10" font-family="IBM Plex Mono, monospace" font-weight="600" fill="var(--warn)">${t('ch_peakLbl')} ${fmtFull(peak.v)}</text>
         <circle cx="${x(last.t).toFixed(1)}" cy="${y(last.v).toFixed(1)}" r="3.5" fill="var(--accent)"/>
         <line id="chartCursor" x1="0" y1="${PT}" x2="0" y2="${H-PB}" stroke="var(--text-dim)" stroke-width="1" visibility="hidden"/>
         <circle id="chartDot" cx="0" cy="0" r="4" fill="var(--panel)" stroke="var(--accent)" stroke-width="2" visibility="hidden"/>
@@ -651,30 +798,28 @@ function chartHtml(g, rangeKey){
       </svg>
       <div class="chart-tip" id="chartTip" hidden></div>
     </div>`;
-    // stash geometry for hover
-    chartHtml._geom = {pts, W, H, PL, PR, PT, PB, t0, span, x, y, withDate};
+    chartHtml._geom = {pts, W, H, PL, PR, PT, PB, t0, span, x, y};
   }
 
   const avg = pts.length ? Math.round(pts.reduce((s,p)=>s+p.v,0)/pts.length) : null;
   const lo = pts.length ? Math.min(...pts.map(p=>p.v)) : null;
   const hi = pts.length ? Math.max(...pts.map(p=>p.v)) : null;
-  const firstT = all.length ? all[0].t : null, lastT = all.length ? all[all.length-1].t : null;
-  const covered = firstT != null ? Math.round((lastT - firstT)/3600e3) : 0;
+  const covered = all.length ? Math.round((all[all.length-1].t - all[0].t)/3600e3) : 0;
 
   return `
     <div class="chart-head">
-      <span class="t">Concurrent players</span>
+      <span class="t">${t('ch_title')}</span>
       <div class="range-bar" id="rangeBar">${buttons}</div>
     </div>
     <div class="chart-stats">
-      <div>now <b>${fmtFull(g.playing)}</b></div>
-      <div>range peak <b class="peak">${hi != null ? fmtFull(hi) : '—'}</b></div>
-      <div>range low <b>${lo != null ? fmtFull(lo) : '—'}</b></div>
-      <div>range avg <b>${avg != null ? fmtFull(avg) : '—'}</b></div>
-      <div>all-time peak on record <b class="peak">${allPeak ? fmtFull(allPeak.v) : '—'}</b>${allPeak ? ` <span>· ${fmtTime(allPeak.t, true)}</span>` : ''}</div>
+      <div>${t('ch_now')} <b>${fmtFull(g.playing)}</b></div>
+      <div>${t('ch_peak')} <b class="peak">${hi != null ? fmtFull(hi) : '—'}</b></div>
+      <div>${t('ch_low')} <b>${lo != null ? fmtFull(lo) : '—'}</b></div>
+      <div>${t('ch_avg')} <b>${avg != null ? fmtFull(avg) : '—'}</b></div>
+      <div>${t('ch_allPeak')} <b class="peak">${allPeak ? fmtFull(allPeak.v) : '—'}</b>${allPeak ? ` <span>· ${fmtTime(allPeak.t, true)}</span>` : ''}</div>
     </div>
     ${body}
-    <div class="chart-note">${all.length} readings across ${covered < 1 ? 'under an hour' : covered + ' h'} of monitoring. Roblox publishes no player history, so this chart only grows as the radar keeps sampling — day, week and month views unlock as history accumulates.</div>`;
+    <div class="chart-note">${t('ch_note')(all.length, covered < 1 ? t('underHour') : t('hours')(covered))}</div>`;
 }
 
 function bindChartHover(){
@@ -688,13 +833,13 @@ function bindChartHover(){
   const move = e => {
     const r = svg.getBoundingClientRect();
     const sx = (e.clientX - r.left) * geom.W / r.width;
-    const t = geom.t0 + ((sx - geom.PL) / (geom.W - geom.PL - geom.PR)) * geom.span;
+    const tt = geom.t0 + ((sx - geom.PL) / (geom.W - geom.PL - geom.PR)) * geom.span;
     let best = geom.pts[0];
-    for(const p of geom.pts) if(Math.abs(p.t - t) < Math.abs(best.t - t)) best = p;
+    for(const p of geom.pts) if(Math.abs(p.t - tt) < Math.abs(best.t - tt)) best = p;
     const px = geom.x(best.t), py = geom.y(best.v);
     cursor.setAttribute('x1', px); cursor.setAttribute('x2', px); cursor.setAttribute('visibility','visible');
     dot.setAttribute('cx', px); dot.setAttribute('cy', py); dot.setAttribute('visibility','visible');
-    tip.innerHTML = `${fmtTime(best.t, true)}<br><b>${fmtFull(best.v)}</b> players`;
+    tip.innerHTML = `${fmtTime(best.t, true)}<br><b>${fmtFull(best.v)}</b> ${t('players')}`;
     tip.hidden = false;
     tip.style.left = (px * r.width / geom.W) + 'px';
     tip.style.top = (py * r.height / geom.H) + 'px';
@@ -716,69 +861,51 @@ function renderChart(g, rangeKey){
   box.querySelectorAll('.range-btn').forEach(b => b.addEventListener('click', () => renderChart(g, b.dataset.range)));
 }
 
-/* ---------- modal ---------- */
+/* ---------- game modal ---------- */
 const overlay = document.getElementById('overlay');
 const modal = document.getElementById('modal');
 let lastFocus = null;
 
-function openModal(idx){
+function openModal(idx, rangeKey){
   const g = GAMES[idx];
   if(!g) return;
-  lastFocus = document.activeElement;
+  if(overlay.hidden) lastFocus = document.activeElement;
 
   const series = seriesFor(g);
   const peak = series.length ? Math.max(...series.map(p=>p.v)) : null;
-
   const stats = [
-    ['Players now', fmtFull(g.playing)],
-    ['Rank by players', '#'+g._rank],
-    ['Peak on record', peak != null ? fmtFull(peak) : '—'],
-    ['Total visits', fmtFull(g.visits)],
-    ['Visits / day', fmtFull(g.vpd)],
-    ['Rating', g.like != null ? g.like+'%' : '—'],
-    ['Votes', fmtFull(g.votes)],
-    ['Favorites', fmtFull(g.favs)],
-    ['Age', fmtAge(g.age)],
-    ['Last updated', g.upd != null ? (g.upd === 0 ? 'today' : g.upd+'d ago') : '—'],
-    ['Server size', g.maxP ? g.maxP+' players' : '—'],
-    ['Maturity', g.maturity || '—']
+    [t('st_now'), fmtFull(g.playing)], [t('st_rank'), '#'+g._rank], [t('st_peak'), peak != null ? fmtFull(peak) : '—'],
+    [t('st_visits'), fmtFull(g.visits)], [t('st_vpd'), fmtFull(g.vpd)], [t('st_rating'), g.like != null ? g.like+'%' : '—'],
+    [t('st_votes'), fmtFull(g.votes)], [t('st_favs'), fmtFull(g.favs)], [t('st_age'), fmtAge(g.age)],
+    [t('st_upd'), fmtUpd(g.upd)], [t('st_server'), g.maxP ? g.maxP + ' ' + t('players') : '—'], [t('st_mat'), g.maturity || '—']
   ];
-
   const socials = (g.socials || []).map(s =>
-    `<a class="link-btn" href="${esc(s.u)}" target="_blank" rel="noopener" title="${esc(s.t || s.u)}">${SOCIAL_LABELS[s.k] || s.k}</a>`
-  ).join('');
-
+    `<a class="link-btn" href="${esc(s.u)}" target="_blank" rel="noopener" title="${esc(s.t || s.u)}">${t('socials')[s.k] || s.k}</a>`).join('');
   const hero = g.thumb
     ? `<div class="modal-hero"><img src="${esc(g.thumb)}" alt="" onerror="this.style.visibility='hidden'"><div class="fade"></div><button class="modal-close" id="modalClose" aria-label="Close">×</button></div>`
-    : `<div class="modal-hero icon-only">${spriteHtml(g, 144)}<button class="modal-close" id="modalClose" aria-label="Close">×</button></div>`;
+    : `<div class="modal-hero icon-only">${imgHtml(g, 144)}<button class="modal-close" id="modalClose" aria-label="Close">×</button></div>`;
 
   modal.innerHTML = `
     ${hero}
     <div class="modal-body">
       <h2 class="modal-title" id="modalTitle">${esc(g.name)}</h2>
-      <div class="modal-creator">by ${esc(g.creator || 'unknown')}${g.verified ? ' ✓' : ''} · ${esc(g.genre || '')} · classified as ${CAT_LABELS[g.cat] || g.cat}${g.src === 'review' ? '' : ' (auto, by keyword rules — not yet hand-reviewed)'}${g.added ? ' · added ' + esc(g.added) : ''}</div>
-      <div class="modal-tags">${g.tags.length ? g.tags.map(tagHtml).join('') : '<span class="tag none">no pattern flagged</span>'}</div>
-
-      <div class="stat-grid">
-        ${stats.map(([k,v]) => `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('')}
-      </div>
-
+      <div class="modal-creator">${t('by')} ${esc(g.creator || t('unknown'))}${g.verified ? ' ✓' : ''} · ${esc(g.genre || '')} · ${t('classifiedAs')} ${catLabel(g.cat)}${g.src === 'review' ? '' : ' ' + t('autoNote')}${g.added ? ` · ${t('added')} ${esc(g.added)}` : ''}</div>
+      <div class="modal-tags">${g.tags.length ? g.tags.map(tagHtml).join('') : `<span class="tag none">${t('noTag')}</span>`}</div>
+      <div class="stat-grid">${stats.map(([k,v]) => `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('')}</div>
       <div class="chart-box" id="chartBox"></div>
-
       <div class="links-row">
-        <a class="link-btn primary" href="https://www.roblox.com/games/${g.place}" target="_blank" rel="noopener">Open on Roblox</a>
-        ${g.cUrl ? `<a class="link-btn" href="${esc(g.cUrl)}" target="_blank" rel="noopener">${g.cType === 'Group' ? 'Roblox group' : 'Creator profile'}</a>` : ''}
+        <a class="link-btn primary" href="https://www.roblox.com/games/${g.place}" target="_blank" rel="noopener">${t('openRoblox')}</a>
+        ${g.cUrl ? `<a class="link-btn" href="${esc(g.cUrl)}" target="_blank" rel="noopener">${g.cType === 'Group' ? t('group') : t('profile')}</a>` : ''}
         ${socials}
       </div>
-      ${socials ? '' : '<div class="no-socials">No Discord or social link in this game\'s description. Roblox filters most links out of descriptions — check the game page\'s social links section.</div>'}
+      ${socials ? '' : `<div class="no-socials">${t('noSocials')}</div>`}
     </div>`;
 
-  renderChart(g, pickDefaultRange(series));
+  renderChart(g, rangeKey || pickDefaultRange(series));
   overlay.hidden = false;
   document.body.style.overflow = 'hidden';
   document.getElementById('modalClose').focus();
 }
-
 function closeModal(){
   overlay.hidden = true;
   document.body.style.overflow = '';
@@ -797,44 +924,38 @@ document.getElementById('tbody').addEventListener('click', e => {
 });
 
 /* ---------- controls ---------- */
-function toggleTag(t){
-  if(state.tags.has(t)) state.tags.delete(t); else state.tags.add(t);
-  state.shown = PAGE;
-  render();
+function toggleTag(k){
+  if(state.tags.has(k)) state.tags.delete(k); else state.tags.add(k);
+  state.shown = PAGE; render();
 }
 function buildSignals(){
   const el = document.getElementById('signals');
   el.innerHTML = SIGNAL_DEFS.map(s => {
     const n = GAMES.filter(g => g.tags.includes(s.key)).length;
-    return `<button type="button" class="signal ${s.tone}" data-tag="${s.key}" aria-pressed="false"><div class="n">${n}</div><div class="lbl">${s.label}</div></button>`;
+    return `<button type="button" class="signal ${s.tone}" data-tag="${s.key}" aria-pressed="false"><div class="n">${n}</div><div class="lbl">${t('signals')[s.key]}</div></button>`;
   }).join('');
   el.querySelectorAll('.signal').forEach(n => n.addEventListener('click', () => toggleTag(n.dataset.tag)));
 }
 function buildCatSelect(){
   const sel = document.getElementById('catSelect');
-  [...new Set(GAMES.map(g => g.cat))]
-    .sort((a,b) => (CAT_LABELS[a]||a).localeCompare(CAT_LABELS[b]||b))
-    .forEach(c => {
-      const n = GAMES.filter(g => g.cat === c).length;
-      const opt = document.createElement('option');
-      opt.value = c; opt.textContent = `${CAT_LABELS[c] || c} (${n})`;
-      sel.appendChild(opt);
-    });
-  sel.addEventListener('change', () => { state.cat = sel.value; state.shown = PAGE; render(); });
+  const cats = [...new Set(GAMES.map(g => g.cat))].sort((a,b) => catLabel(a).localeCompare(catLabel(b)));
+  sel.innerHTML = `<option value="">${t('allCats')}</option>` + cats.map(c =>
+    `<option value="${c}">${catLabel(c)} (${GAMES.filter(g => g.cat === c).length})</option>`).join('');
+  sel.value = state.cat;
 }
 function buildTagChips(){
   const counts = {};
-  GAMES.forEach(g => g.tags.forEach(t => { counts[t] = (counts[t]||0)+1; }));
+  GAMES.forEach(g => g.tags.forEach(k => { counts[k] = (counts[k]||0)+1; }));
   const el = document.getElementById('tagChips');
-  el.innerHTML = Object.keys(counts).sort((a,b)=>counts[b]-counts[a]).map(t =>
-    `<button type="button" class="chip" data-tag="${t}" aria-pressed="false">${(TAG_META[t]||{label:t}).label} · ${counts[t]}</button>`
-  ).join('');
+  el.innerHTML = Object.keys(counts).sort((a,b)=>counts[b]-counts[a]).map(k =>
+    `<button type="button" class="chip" data-tag="${k}" aria-pressed="false">${tagLabel(k)} · ${counts[k]}</button>`).join('');
   el.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => toggleTag(c.dataset.tag)));
 }
 
 document.getElementById('search').addEventListener('input', e => { state.search = e.target.value; state.shown = PAGE; render(); });
+document.getElementById('catSelect').addEventListener('change', e => { state.cat = e.target.value; state.shown = PAGE; render(); });
 document.getElementById('ageSelect').addEventListener('change', e => { state.age = e.target.value; state.shown = PAGE; render(); });
-document.getElementById('sortSelect').addEventListener('change', e => { state.sort = e.target.value; state.shown = PAGE; render(); });
+document.getElementById('sortSelect').addEventListener('change', e => { if(e.target.value){ state.sort = e.target.value; state.shown = PAGE; render(); } });
 document.getElementById('moreBtn').addEventListener('click', () => { state.shown += PAGE; render(); });
 document.getElementById('clearBtn').addEventListener('click', () => {
   state = defaultState();
@@ -844,40 +965,26 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   document.getElementById('sortSelect').value = 'playing_desc';
   render();
 });
-document.querySelectorAll('thead th.sortable').forEach(th => {
-  th.addEventListener('click', () => {
-    const k = th.dataset.k;
-    const def = {playing:'desc', visits:'desc', like:'desc', age:'asc', name:'asc'}[k];
-    const [cf, cd] = state.sort.split('_');
-    state.sort = `${k}_${cf === k ? (cd === 'desc' ? 'asc' : 'desc') : def}`;
-    const sel = document.getElementById('sortSelect');
-    if([...sel.options].some(o => o.value === state.sort)) sel.value = state.sort;
-    state.shown = PAGE;
-    render();
-  });
-});
 
 /* ---------- settings panel ---------- */
 const settingsOverlay = document.getElementById('settingsOverlay');
 let settingsReturnFocus = null;
-
 function syncSettingsUI(){
   settingsOverlay.querySelectorAll('.seg').forEach(seg => {
     const key = seg.dataset.setting;
     seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', String(settings[key]) === b.dataset.v));
   });
-  settingsOverlay.querySelectorAll('.switch').forEach(sw => {
-    sw.setAttribute('aria-checked', String(!!settings[sw.dataset.setting]));
-  });
+  settingsOverlay.querySelectorAll('.switch').forEach(sw => sw.setAttribute('aria-checked', String(!!settings[sw.dataset.setting])));
 }
 function applySetting(key, value){
   settings[key] = value;
   saveSettings();
   if(key === 'theme') applyTheme();
   if(key === 'rows'){ PAGE = value === 'all' ? Infinity : Number(value); state.shown = PAGE; }
+  if(key === 'rememberFilters' && value) saveFilters();
+  if(key === 'lang'){ applyLanguage(); syncSettingsUI(); return; }
   syncSettingsUI();
   if(GAMES.length) render();
-  // re-render an open game chart so time-zone changes show immediately
   if(key === 'tz' && !overlay.hidden && currentGame) renderChart(currentGame, currentRange);
 }
 function openSettings(){
@@ -896,44 +1003,43 @@ document.getElementById('settingsBtn').addEventListener('click', openSettings);
 document.getElementById('settingsClose').addEventListener('click', closeSettings);
 settingsOverlay.addEventListener('click', e => { if(e.target === settingsOverlay) closeSettings(); });
 document.addEventListener('keydown', e => { if(e.key === 'Escape' && !settingsOverlay.hidden) closeSettings(); });
-settingsOverlay.querySelectorAll('.seg button').forEach(b => {
-  b.addEventListener('click', () => applySetting(b.closest('.seg').dataset.setting, b.dataset.v));
-});
-settingsOverlay.querySelectorAll('.switch').forEach(sw => {
-  sw.addEventListener('click', () => applySetting(sw.dataset.setting, !settings[sw.dataset.setting]));
-});
+settingsOverlay.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => applySetting(b.closest('.seg').dataset.setting, b.dataset.v)));
+settingsOverlay.querySelectorAll('.switch').forEach(sw => sw.addEventListener('click', () => applySetting(sw.dataset.setting, !settings[sw.dataset.setting])));
 document.getElementById('settingsReset').addEventListener('click', () => {
-  settings = {...DEFAULT_SETTINGS};
+  settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
   saveSettings();
+  try { localStorage.removeItem(FILTERS_KEY); } catch (e) {}
   applyTheme();
   PAGE = 150; state.shown = PAGE;
-  syncSettingsUI();
-  if(GAMES.length) render();
+  applyLanguage(); syncSettingsUI();
 });
 
+/* ---------- boot ---------- */
+async function loadData(){
+  const bust = '?v=' + Math.floor(Date.now() / 3600e3);
+  const [gamesDoc, hist] = await Promise.all([
+    fetch('data/games.json' + bust).then(r => r.json()),
+    fetch('data/history.json' + bust).then(r => r.json())
+  ]);
+  const now = Date.now();
+  gamesDoc.games.forEach(g => {
+    g.age = g.created ? Math.floor((now - new Date(g.created)) / 86400e3) : null;
+    g.upd = g.updated ? Math.floor((now - new Date(g.updated)) / 86400e3) : null;
+    g.vpd = g.age ? Math.round(g.visits / g.age) : null;
+    g.hist = hist.series[String(g.id)] || [];
+  });
+  DATA = {generated: gamesDoc.generated, sampleTimes: hist.times || []};
+  GAMES = gamesDoc.games;
+  SAMPLE_TIMES = DATA.sampleTimes;
+}
 async function init(){
-  document.getElementById('tbody').innerHTML = '<tr><td colspan="7"><div class="loading">Loading radar data…</div></td></tr>';
-  try {
-    await loadData();
-  } catch (e) {
-    document.getElementById('tbody').innerHTML = '<tr><td colspan="7"><div class="loading">Could not load data/games.json — if you opened this file directly, serve the folder over http (GitHub Pages does this for you).</div></td></tr>';
-    return;
-  }
+  applyLanguage();
+  document.getElementById('tbody').innerHTML = `<tr><td colspan="7"><div class="loading">${t('loading')}</div></td></tr>`;
+  try { await loadData(); }
+  catch (e) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7"><div class="loading">${t('loadErr')}</div></td></tr>`; return; }
   indexGames();
-  const totalPlayers = GAMES.reduce((s,g) => s + (g.playing||0), 0);
-  const scanned = new Date(DATA.generated);
-  document.getElementById('scanMeta').innerHTML =
-    `<b>${GAMES.length}</b> games tracked · <b>${fmtNum(totalPlayers)}</b> concurrent players<br>` +
-    `last refresh ${scanned.toISOString().slice(0,16).replace('T',' ')} UTC · refreshes daily`;
-  document.getElementById('footerNote').innerHTML =
-    'Click any thumbnail for full stats, the player-history chart, the creator\'s Roblox group and any social links found. ' +
-    'Counts come from Roblox\'s public game and thumbnail APIs and are refreshed once a day at 20:00 UTC. ' +
-    'Categories and pattern signals were assigned by reading each game\'s name, description and genre — a research starting point, not a verdict. ' +
-    '"Copy of another hit" means the core loop visibly follows an earlier game; "Borrowed IP" flags external copyrighted characters or brands.';
-  buildSignals();
-  buildCatSelect();
-  buildTagChips();
-  render();
+  loadFilters();
+  applyLanguage();
 }
 init();
 </script>
