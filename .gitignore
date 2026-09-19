@@ -1,0 +1,12 @@
+# pipeline intermediates (regenerable)
+pipeline/*.json
+pipeline/*.jsonl
+pipeline/*.js
+pipeline/*.jpg
+pipeline/thumbs/
+!pipeline/classification/
+
+# local
+__pycache__/
+.DS_Store
+Thumbs.db
