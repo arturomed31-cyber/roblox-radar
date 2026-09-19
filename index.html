@@ -6,9 +6,7 @@
 <title>Roblox Radar</title>
 <meta name="description" content="Every Roblox game holding 1,000+ concurrent players, tagged by category and copy pattern, with daily player history.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%AE%3C/text%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 :root{
   color-scheme:dark;
@@ -237,6 +235,19 @@ td{padding:8px 12px;font-size:13px;vertical-align:middle;}
 .col-chips{display:flex;flex-wrap:wrap;gap:6px;}
 .col-chips .chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-text);}
 .settings-body{max-height:85vh;overflow-y:auto;}
+.legal{max-width:720px;}
+.legal-body{padding:18px 22px 24px;max-height:85vh;overflow-y:auto;font-size:13.5px;line-height:1.6;}
+.legal-body h3{font-family:'Barlow Condensed',sans-serif;font-size:20px;text-transform:uppercase;margin:18px 0 6px;letter-spacing:.02em;}
+.legal-body h3:first-of-type{margin-top:4px;}
+.legal-body p{margin:0 0 10px;color:var(--text-dim);}
+.legal-body p b{color:var(--text);}
+.legal-body ul{margin:0 0 10px 18px;padding:0;color:var(--text-dim);}
+.legal-body li{margin:3px 0;}
+.legal-body a{color:var(--accent);}
+.legal-meta{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-faint);margin-top:14px;}
+footer .legal-links{margin-top:8px;}
+footer .legal-links button{background:none;border:none;color:var(--accent);font-family:inherit;font-size:11.5px;cursor:pointer;padding:0;text-decoration:underline;}
+footer .legal-links button:hover{color:var(--text);}
 
 /* ---------- views, trends, score, market ---------- */
 .view-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;}
@@ -354,11 +365,20 @@ footer{margin-top:20px;font-size:11.5px;color:var(--text-faint);font-family:'IBM
     <div class="market-note" data-i18n="m_note"></div>
   </div>
 
-  <footer id="footerNote"></footer>
+  <footer><div id="footerNote"></div><div class="legal-links"><button type="button" id="legalBtn"></button></div></footer>
 </div>
 
 <div class="overlay" id="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal" id="modal"></div>
+</div>
+
+<div class="overlay" id="legalOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="legalTitle">
+  <div class="modal legal">
+    <div class="legal-body">
+      <h2 class="settings-title" id="legalTitle"><span data-i18n="lg_title"></span> <button type="button" id="legalClose" aria-label="Close">×</button></h2>
+      <div id="legalContent"></div>
+    </div>
+  </div>
 </div>
 
 <div class="overlay" id="settingsOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
@@ -508,6 +528,26 @@ const I18N = {
     bz_note: "Estimates only. DAU ≈ average concurrent players over the last 24 h × 12 (a common Roblox ratio). Earnings assume $6–18 per month per average concurrent player after Roblox's cut (calibrated on publicly reported cases), adjusted for how the game monetizes. Asking prices in the buyer market usually run 12–24× monthly earnings for small and mid-size games; the biggest games are rarely for sale. Roblox publishes none of this; treat it as a starting range for due diligence.",
     bz_pending: "Ownership and monetization data arrive with the next daily refresh.",
     sc_group: "Group-owned (transferable)",
+    lg_title: "Privacy & legal notice", lg_link: "Privacy · Legal notice",
+    lg_html: `
+<h3>Who runs this site</h3>
+<p>Roblox Radar is an independent, personal project. Contact: <a href="mailto:Arturomed31@gmail.com">Arturomed31@gmail.com</a>.</p>
+<h3>Privacy</h3>
+<p><b>No accounts, no cookies, no tracking.</b> This site has no server-side code and no analytics. It does not collect, store or share personal data.</p>
+<ul>
+<li><b>Local storage only:</b> your settings, filters and chart notes are saved in your own browser (localStorage) and never leave your device. Clearing your browser data removes them.</li>
+<li><b>Third-party requests:</b> game icons and thumbnails are loaded directly from Roblox's image servers (tr.rbxcdn.com). When your browser fetches them, Roblox receives your IP address and standard request headers, under <a href="https://en.help.roblox.com/hc/en-us/articles/115004630823" target="_blank" rel="noopener">Roblox's privacy policy</a>. Fonts are hosted on this site; nothing is sent to Google.</li>
+<li><b>Hosting:</b> the site is served by Cloudflare Pages and GitHub Pages, which may keep standard server logs (IP address, time, requested file) for security. See <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare</a> and <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub</a>.</li>
+</ul>
+<h3>Where the data comes from</h3>
+<p>All game statistics (players, visits, ratings, images, creator and group names, social links) come from Roblox's public web APIs and are refreshed automatically. Only information that Roblox already shows publicly is displayed.</p>
+<h3>Not affiliated with Roblox</h3>
+<p>This site is not endorsed by, sponsored by or affiliated with Roblox Corporation. Roblox and the Roblox logo are registered trademarks of Roblox Corporation. Game names, images and other content belong to their respective creators and are shown for identification and informational purposes.</p>
+<h3>No financial advice</h3>
+<p><b>Estimates of daily players, developer earnings and asking prices are rough calculations based on public player counts and generic industry ratios.</b> Roblox does not publish revenue data. Categories, pattern signals and the opportunity score are editorial opinions produced partly by automated rules. Nothing on this site is financial, investment or legal advice; verify everything independently before any transaction.</p>
+<h3>Removal requests</h3>
+<p>If you own a game or group listed here and want it removed or corrected, write to the contact address above and it will be handled promptly.</p>
+<div class="legal-meta">Last updated: September 2026</div>`,
     n_title: "Notes on this chart", n_hint: "Click anywhere on the chart to pin a note at that moment. Notes are saved in this browser; export them to keep or share.",
     n_placeholder: "What happened here? (update, promo, drop…)", n_save: "Save", n_cancel: "Cancel", n_delete: "Delete", n_edit: "Edit",
     n_empty: "No notes yet.", n_export: "Export", n_import: "Import", n_shared: "shared", n_exported: "Notes exported", n_imported: n => `${n} notes imported`,
@@ -578,6 +618,26 @@ const I18N = {
     bz_note: "Solo estimaciones. DAU ≈ jugadores concurrentes promedio de las últimas 24 h × 12 (proporción habitual en Roblox). La ganancia asume $6–18 al mes por jugador concurrente promedio tras la comisión de Roblox (calibrado con casos públicos), ajustado por cómo monetiza el juego. En el mercado de compraventa se suele pedir 12–24× la ganancia mensual en juegos pequeños y medianos; los gigantes rara vez se venden. Roblox no publica nada de esto; úsalo como rango inicial para tu diligencia.",
     bz_pending: "Los datos de propiedad y monetización llegan con la próxima actualización diaria.",
     sc_group: "Propiedad de grupo (transferible)",
+    lg_title: "Privacidad y aviso legal", lg_link: "Privacidad · Aviso legal",
+    lg_html: `
+<h3>Quién opera este sitio</h3>
+<p>Roblox Radar es un proyecto personal e independiente. Contacto: <a href="mailto:Arturomed31@gmail.com">Arturomed31@gmail.com</a>.</p>
+<h3>Privacidad</h3>
+<p><b>Sin cuentas, sin cookies, sin rastreo.</b> Este sitio no tiene código de servidor ni analíticas. No recopila, almacena ni comparte datos personales.</p>
+<ul>
+<li><b>Solo almacenamiento local:</b> tus ajustes, filtros y notas en las gráficas se guardan en tu propio navegador (localStorage) y nunca salen de tu dispositivo. Al borrar los datos del navegador se eliminan.</li>
+<li><b>Peticiones a terceros:</b> los iconos y miniaturas de los juegos se cargan directamente desde los servidores de imágenes de Roblox (tr.rbxcdn.com). Al pedirlos, Roblox recibe tu dirección IP y las cabeceras habituales, bajo la <a href="https://es.help.roblox.com/hc/es/articles/115004630823" target="_blank" rel="noopener">política de privacidad de Roblox</a>. Las fuentes se alojan en este sitio; no se envía nada a Google.</li>
+<li><b>Alojamiento:</b> el sitio se sirve desde Cloudflare Pages y GitHub Pages, que pueden conservar registros estándar de servidor (IP, hora, archivo solicitado) por seguridad. Consulta <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare</a> y <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub</a>.</li>
+</ul>
+<h3>De dónde salen los datos</h3>
+<p>Todas las estadísticas (jugadores, visitas, valoraciones, imágenes, nombres de creadores y grupos, enlaces sociales) provienen de las APIs web públicas de Roblox y se actualizan automáticamente. Solo se muestra información que Roblox ya publica.</p>
+<h3>Sin relación con Roblox</h3>
+<p>Este sitio no está respaldado, patrocinado ni afiliado a Roblox Corporation. Roblox y el logotipo de Roblox son marcas registradas de Roblox Corporation. Los nombres, imágenes y demás contenido de los juegos pertenecen a sus respectivos creadores y se muestran con fines de identificación e información.</p>
+<h3>No es asesoría financiera</h3>
+<p><b>Las estimaciones de jugadores diarios, ganancias del desarrollador y precios de venta son cálculos aproximados a partir de conteos públicos de jugadores y proporciones genéricas del sector.</b> Roblox no publica datos de ingresos. Las categorías, señales de patrón y el puntaje de oportunidad son opiniones editoriales generadas en parte por reglas automáticas. Nada en este sitio constituye asesoría financiera, de inversión ni legal; verifica todo de forma independiente antes de cualquier transacción.</p>
+<h3>Solicitudes de retiro</h3>
+<p>Si eres dueño de un juego o grupo listado aquí y quieres que se retire o corrija, escribe al correo de contacto y se atenderá con prontitud.</p>
+<div class="legal-meta">Última actualización: septiembre de 2026</div>`,
     n_title: "Notas en esta gráfica", n_hint: "Haz clic en cualquier punto de la gráfica para fijar una nota en ese momento. Las notas se guardan en este navegador; expórtalas para conservarlas o compartirlas.",
     n_placeholder: "¿Qué pasó aquí? (actualización, promo, caída…)", n_save: "Guardar", n_cancel: "Cancelar", n_delete: "Borrar", n_edit: "Editar",
     n_empty: "Aún no hay notas.", n_export: "Exportar", n_import: "Importar", n_shared: "compartida", n_exported: "Notas exportadas", n_imported: n => `${n} notas importadas`,
@@ -800,6 +860,8 @@ function applyLanguage(){
     const scanned = new Date(DATA.generated).toISOString().slice(0,16).replace('T',' ');
     document.getElementById('scanMeta').innerHTML = t('tracked')(GAMES.length, fmtNum(totalPlayers)) + '<br>' + t('lastRefresh')(scanned);
     document.getElementById('footerNote').textContent = t('footer');
+    document.getElementById('legalBtn').textContent = t('lg_link');
+    if(!legalOverlay.hidden) document.getElementById('legalContent').innerHTML = t('lg_html');
     const days = SAMPLE_MS.length > 1 ? Math.max(1, Math.round((SAMPLE_MS[SAMPLE_MS.length-1] - SAMPLE_MS[0]) / 86400e3)) : 0;
     document.getElementById('trendCoverage').textContent = t('coverage')(days, SAMPLE_MS.length);
     render();
@@ -1521,6 +1583,26 @@ document.getElementById('settingsReset').addEventListener('click', () => {
   applyLanguage(); syncSettingsUI();
 });
 
+/* ---------- legal panel ---------- */
+const legalOverlay = document.getElementById('legalOverlay');
+let legalReturnFocus = null;
+function openLegal(){
+  legalReturnFocus = document.activeElement;
+  document.getElementById('legalContent').innerHTML = t('lg_html');
+  legalOverlay.hidden = false;
+  document.body.style.overflow = 'hidden';
+  document.getElementById('legalClose').focus();
+}
+function closeLegal(){
+  legalOverlay.hidden = true;
+  if(overlay.hidden && settingsOverlay.hidden) document.body.style.overflow = '';
+  if(legalReturnFocus) legalReturnFocus.focus();
+}
+document.getElementById('legalBtn').addEventListener('click', openLegal);
+document.getElementById('legalClose').addEventListener('click', closeLegal);
+legalOverlay.addEventListener('click', e => { if(e.target === legalOverlay) closeLegal(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !legalOverlay.hidden) closeLegal(); });
+
 /* ---------- boot ---------- */
 async function loadData(){
   const bust = '?v=' + Math.floor(Date.now() / 3600e3);
@@ -1542,6 +1624,7 @@ async function loadData(){
   SAMPLE_TIMES = DATA.sampleTimes;
 }
 async function init(){
+  document.getElementById('legalBtn').textContent = t('lg_link');
   applyLanguage();
   document.getElementById('tbody').innerHTML = `<tr><td colspan="7"><div class="loading">${t('loading')}</div></td></tr>`;
   try { await loadData(); }
