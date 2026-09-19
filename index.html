@@ -184,6 +184,35 @@ td{padding:8px 12px;font-size:13px;vertical-align:middle;}
 .link-btn.primary:hover{color:var(--accent-text);opacity:.9;}
 .no-socials{font-size:12px;color:var(--text-faint);margin-top:10px;}
 
+/* ---------- settings ---------- */
+.header-right{display:flex;align-items:flex-end;gap:14px;}
+.gear-btn{width:38px;height:38px;border-radius:9px;border:1px solid var(--border);background:var(--panel);color:var(--text-dim);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+.gear-btn:hover{color:var(--text);border-color:var(--accent);}
+.gear-btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+.gear-btn svg{width:18px;height:18px;}
+.settings{max-width:440px;}
+.settings-body{padding:18px 20px 20px;}
+.settings-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:24px;text-transform:uppercase;margin:0 0 14px;display:flex;justify-content:space-between;align-items:center;}
+.settings-title button{background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:7px;width:30px;height:30px;font-size:16px;cursor:pointer;}
+.settings-title button:hover{color:var(--text);border-color:var(--text-faint);}
+.setting{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:11px 0;border-top:1px solid var(--border);}
+.setting:first-of-type{border-top:none;}
+.setting .lbl{font-size:13px;}
+.setting .hint{display:block;font-size:11px;color:var(--text-faint);margin-top:2px;}
+.seg{display:flex;gap:2px;background:var(--panel-3);border-radius:7px;padding:2px;flex-shrink:0;}
+.seg button{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 9px;border-radius:5px;border:none;background:transparent;color:var(--text-dim);cursor:pointer;}
+.seg button.on{background:var(--panel);color:var(--accent);font-weight:600;}
+.seg button:hover:not(.on){color:var(--text);}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+.switch{position:relative;width:40px;height:22px;border-radius:99px;background:var(--panel-3);border:1px solid var(--border);cursor:pointer;flex-shrink:0;padding:0;}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--text-dim);transition:transform .15s,background .15s;}
+.switch[aria-checked="true"]{background:var(--accent-dim);border-color:var(--accent);}
+.switch[aria-checked="true"]::after{transform:translateX(18px);background:var(--accent);}
+.switch:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+.settings-foot{margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:11px;color:var(--text-faint);}
+.settings-foot button{font-family:inherit;font-size:12px;color:var(--text-dim);background:none;border:1px solid var(--border);border-radius:7px;padding:6px 11px;cursor:pointer;}
+.settings-foot button:hover{color:var(--text);}
+
 footer{margin-top:20px;font-size:11.5px;color:var(--text-faint);font-family:'IBM Plex Mono',monospace;line-height:1.7;max-width:100ch;}
 
 @media (max-width:640px){
@@ -205,7 +234,12 @@ footer{margin-top:20px;font-size:11.5px;color:var(--text-faint);font-family:'IBM
       <h1>Roblox Radar</h1>
       <div class="sub">Every Roblox game currently holding 1,000+ concurrent players, plus everything on the front-page charts &mdash; sorted by what each game actually is, so a genre-defining original never looks like the fifth copy of last month's hit.</div>
     </div>
-    <div class="scan-meta" id="scanMeta"></div>
+    <div class="header-right">
+      <div class="scan-meta" id="scanMeta"></div>
+      <button class="gear-btn" id="settingsBtn" type="button" aria-label="Settings" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
   </header>
 
   <div class="section-label">Pattern signals &mdash; click to filter</div>
@@ -261,6 +295,59 @@ footer{margin-top:20px;font-size:11.5px;color:var(--text-faint);font-family:'IBM
 
 <div class="overlay" id="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal" id="modal"></div>
+</div>
+
+<div class="overlay" id="settingsOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="modal settings">
+    <div class="settings-body">
+      <h2 class="settings-title" id="settingsTitle">Settings <button type="button" id="settingsClose" aria-label="Close">×</button></h2>
+
+      <div class="setting">
+        <div class="lbl">Theme<span class="hint">System follows your OS setting</span></div>
+        <div class="seg" data-setting="theme">
+          <button type="button" data-v="system">System</button>
+          <button type="button" data-v="dark">Dark</button>
+          <button type="button" data-v="light">Light</button>
+        </div>
+      </div>
+
+      <div class="setting">
+        <div class="lbl">Numbers<span class="hint">How players and visits are shown in the table</span></div>
+        <div class="seg" data-setting="numbers">
+          <button type="button" data-v="compact">1.6M</button>
+          <button type="button" data-v="full">1,625,994</button>
+        </div>
+      </div>
+
+      <div class="setting">
+        <div class="lbl">Rows per page<span class="hint">More rows means more images to load</span></div>
+        <div class="seg" data-setting="rows">
+          <button type="button" data-v="50">50</button>
+          <button type="button" data-v="150">150</button>
+          <button type="button" data-v="300">300</button>
+          <button type="button" data-v="all">All</button>
+        </div>
+      </div>
+
+      <div class="setting">
+        <div class="lbl">Hide auto-classified games<span class="hint">Show only games whose category was hand-reviewed</span></div>
+        <button type="button" class="switch" role="switch" aria-checked="false" data-setting="hideAuto" aria-label="Hide auto-classified games"></button>
+      </div>
+
+      <div class="setting">
+        <div class="lbl">Chart time<span class="hint">Time zone for the player-history axis</span></div>
+        <div class="seg" data-setting="tz">
+          <button type="button" data-v="local">Local</button>
+          <button type="button" data-v="utc">UTC</button>
+        </div>
+      </div>
+
+      <div class="settings-foot">
+        <span>Saved in this browser only.</span>
+        <button type="button" id="settingsReset">Reset to defaults</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -321,7 +408,20 @@ const SIGNAL_DEFS = [
 ];
 const SOCIAL_LABELS = {discord:'Discord', youtube:'YouTube', x:'X / Twitter', tiktok:'TikTok', group:'Linked group'};
 
-const PAGE = 150;
+/* ---------- settings (per browser) ---------- */
+const SETTINGS_KEY = 'radar.settings.v1';
+const DEFAULT_SETTINGS = {theme:'system', numbers:'compact', rows:'150', hideAuto:false, tz:'local'};
+let settings = {...DEFAULT_SETTINGS};
+try { Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch (e) {}
+function saveSettings(){ try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {} }
+let PAGE = settings.rows === 'all' ? Infinity : Number(settings.rows) || 150;
+function applyTheme(){
+  const root = document.documentElement;
+  if(settings.theme === 'system') root.removeAttribute('data-theme');
+  else root.setAttribute('data-theme', settings.theme);
+}
+applyTheme();
+
 const defaultState = () => ({search:'', cat:'', age:'', tags:new Set(), sort:'playing_desc', shown:PAGE});
 let state = defaultState();
 
@@ -339,6 +439,7 @@ function fmtNum(n){
   return String(n);
 }
 function fmtFull(n){ return n == null ? '—' : n.toLocaleString('en-US'); }
+function fmtTable(n){ return settings.numbers === 'full' ? fmtFull(n) : fmtNum(n); }
 function fmtAge(d){
   if(d == null) return '—';
   if(d < 31) return d+'d';
@@ -370,6 +471,7 @@ function applyFilters(){
       : rows.filter(g => g.age != null && g.age < Number(state.age));
   }
   if(state.tags.size) rows = rows.filter(g => [...state.tags].every(t => g.tags.includes(t)));
+  if(settings.hideAuto) rows = rows.filter(g => g.src === 'review');
   const [field, dir] = state.sort.split('_');
   return [...rows].sort((a,b) => {
     if(field === 'name'){
@@ -396,8 +498,8 @@ function rowHtml(g){
     <td><span class="cat-pill" title="${g.src === 'review' ? 'Hand-reviewed classification' : 'Auto-classified by keyword rules, not yet reviewed'}">${CAT_LABELS[g.cat] || g.cat}${g.src === 'review' ? '' : ' <span class="auto">auto</span>'}</span></td>
     <td><div class="tagset">${tags}</div></td>
     <td class="rating ${ratingClass(g.like)}">${g.like != null ? g.like+'%' : '—'}</td>
-    <td class="num">${fmtNum(g.playing)}</td>
-    <td class="num">${fmtNum(g.visits)}</td>
+    <td class="num">${fmtTable(g.playing)}</td>
+    <td class="num">${fmtTable(g.visits)}</td>
     <td class="age ${g.age != null && g.age < 60 ? 'fresh' : ''}">${fmtAge(g.age)}</td>
   </tr>`;
 }
@@ -441,12 +543,18 @@ const RANGES = [
 ];
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const pad2 = n => String(n).padStart(2,'0');
-function fmtTime(ms, withDate){
+function dparts(ms){
   const d = new Date(ms);
-  const hm = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-  return withDate ? `${MONTHS[d.getMonth()]} ${d.getDate()} ${hm}` : hm;
+  return settings.tz === 'utc'
+    ? {h:d.getUTCHours(), m:d.getUTCMinutes(), mo:d.getUTCMonth(), day:d.getUTCDate()}
+    : {h:d.getHours(), m:d.getMinutes(), mo:d.getMonth(), day:d.getDate()};
 }
-function fmtDateShort(ms){ const d = new Date(ms); return `${MONTHS[d.getMonth()]} ${d.getDate()}`; }
+function fmtTime(ms, withDate){
+  const p = dparts(ms);
+  const hm = `${pad2(p.h)}:${pad2(p.m)}${settings.tz === 'utc' ? 'Z' : ''}`;
+  return withDate ? `${MONTHS[p.mo]} ${p.day} ${hm}` : hm;
+}
+function fmtDateShort(ms){ const p = dparts(ms); return `${MONTHS[p.mo]} ${p.day}`; }
 function niceStep(span, target){
   const raw = span / target, mag = Math.pow(10, Math.floor(Math.log10(raw)));
   for(const m of [1,2,2.5,5,10]) if(raw <= m*mag) return m*mag;
@@ -598,9 +706,11 @@ function bindChartHover(){
   wrap.addEventListener('touchmove', e => move(e.touches[0]), {passive:true});
 }
 
+let currentGame = null, currentRange = 'all';
 function renderChart(g, rangeKey){
   const box = document.getElementById('chartBox');
   if(!box) return;
+  currentGame = g; currentRange = rangeKey;
   box.innerHTML = chartHtml(g, rangeKey);
   bindChartHover();
   box.querySelectorAll('.range-btn').forEach(b => b.addEventListener('click', () => renderChart(g, b.dataset.range)));
@@ -673,10 +783,13 @@ function closeModal(){
   overlay.hidden = true;
   document.body.style.overflow = '';
   modal.innerHTML = '';
+  currentGame = null;
   if(lastFocus) lastFocus.focus();
 }
 overlay.addEventListener('click', e => { if(e.target === overlay) closeModal(); });
-document.addEventListener('keydown', e => { if(e.key === 'Escape' && !overlay.hidden) closeModal(); });
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && !overlay.hidden && document.getElementById('settingsOverlay').hidden) closeModal();
+});
 modal.addEventListener('click', e => { if(e.target.id === 'modalClose') closeModal(); });
 document.getElementById('tbody').addEventListener('click', e => {
   const btn = e.target.closest('[data-open]');
@@ -742,6 +855,60 @@ document.querySelectorAll('thead th.sortable').forEach(th => {
     state.shown = PAGE;
     render();
   });
+});
+
+/* ---------- settings panel ---------- */
+const settingsOverlay = document.getElementById('settingsOverlay');
+let settingsReturnFocus = null;
+
+function syncSettingsUI(){
+  settingsOverlay.querySelectorAll('.seg').forEach(seg => {
+    const key = seg.dataset.setting;
+    seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', String(settings[key]) === b.dataset.v));
+  });
+  settingsOverlay.querySelectorAll('.switch').forEach(sw => {
+    sw.setAttribute('aria-checked', String(!!settings[sw.dataset.setting]));
+  });
+}
+function applySetting(key, value){
+  settings[key] = value;
+  saveSettings();
+  if(key === 'theme') applyTheme();
+  if(key === 'rows'){ PAGE = value === 'all' ? Infinity : Number(value); state.shown = PAGE; }
+  syncSettingsUI();
+  if(GAMES.length) render();
+  // re-render an open game chart so time-zone changes show immediately
+  if(key === 'tz' && !overlay.hidden && currentGame) renderChart(currentGame, currentRange);
+}
+function openSettings(){
+  settingsReturnFocus = document.activeElement;
+  syncSettingsUI();
+  settingsOverlay.hidden = false;
+  document.body.style.overflow = 'hidden';
+  document.getElementById('settingsClose').focus();
+}
+function closeSettings(){
+  settingsOverlay.hidden = true;
+  if(overlay.hidden) document.body.style.overflow = '';
+  if(settingsReturnFocus) settingsReturnFocus.focus();
+}
+document.getElementById('settingsBtn').addEventListener('click', openSettings);
+document.getElementById('settingsClose').addEventListener('click', closeSettings);
+settingsOverlay.addEventListener('click', e => { if(e.target === settingsOverlay) closeSettings(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !settingsOverlay.hidden) closeSettings(); });
+settingsOverlay.querySelectorAll('.seg button').forEach(b => {
+  b.addEventListener('click', () => applySetting(b.closest('.seg').dataset.setting, b.dataset.v));
+});
+settingsOverlay.querySelectorAll('.switch').forEach(sw => {
+  sw.addEventListener('click', () => applySetting(sw.dataset.setting, !settings[sw.dataset.setting]));
+});
+document.getElementById('settingsReset').addEventListener('click', () => {
+  settings = {...DEFAULT_SETTINGS};
+  saveSettings();
+  applyTheme();
+  PAGE = 150; state.shown = PAGE;
+  syncSettingsUI();
+  if(GAMES.length) render();
 });
 
 async function init(){
