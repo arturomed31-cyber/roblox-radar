@@ -141,6 +141,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--min-players", type=int, default=1000)
     ap.add_argument("--pages", type=int, default=2, help="search pages per keyword")
+    ap.add_argument("--apply-only", action="store_true", help="only apply data/overrides.json, no discovery")
     args = ap.parse_args()
 
     games_doc = json.loads(GAMES.read_text(encoding="utf-8"))
@@ -160,6 +161,10 @@ def main():
             fixed += 1
     if fixed:
         print(f"applied {fixed} overrides to tracked games", flush=True)
+    if args.apply_only:
+        if fixed:
+            GAMES.write_text(json.dumps(games_doc, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        return
 
     pool = {}
     for s in SORTS:
