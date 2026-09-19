@@ -8,7 +8,10 @@ a daily player-history chart per game.
 - `data/games.json` — 823 games with metadata, classification, live stats and image URLs.
 - `data/history.json` — one player-count reading per game per refresh (`times[]` + `series{id:[...]}`).
 - `scripts/update.py` — pulls fresh stats from Roblox's public APIs and appends to the history. Standard library only.
-- `.github/workflows/daily.yml` — runs the update every day at 20:00 UTC and commits the result.
+- `scripts/discover.py` — finds games not tracked yet (charts + keyword sweep), classifies them with keyword
+  rules (`src: "rules"`, shown as "auto" on the site) and adds them. Entries in `data/overrides.json`
+  (`{"id":..., "c": "<cat>", "t": [tags]}`) always win, so hand corrections survive re-runs.
+- `.github/workflows/daily.yml` — every day at 20:00 UTC: discover new games with 1,000+ players, refresh stats, commit.
 
 ## Run locally
 

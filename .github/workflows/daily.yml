@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "0 20 * * *"   # 20:00 UTC = 4:00 pm Caracas, Roblox peak hours
   workflow_dispatch:
+    inputs:
+      min_players:
+        description: "Minimum concurrent players for newly discovered games"
+        default: "1000"
+        required: false
 
 permissions:
   contents: write
@@ -22,6 +27,10 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Discover new games (1,000+ players)
+        run: python scripts/discover.py --min-players "${{ github.event.inputs.min_players || '1000' }}"
+        continue-on-error: true
+
       - name: Pull live stats from Roblox
         run: python scripts/update.py
 
@@ -29,7 +38,7 @@ jobs:
         run: |
           git config user.name "roblox-radar bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/games.json data/history.json
+          git add data/games.json data/history.json data/overrides.json
           if git diff --cached --quiet; then
             echo "nothing changed"
           else
