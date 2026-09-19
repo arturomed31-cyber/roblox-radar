@@ -1,0 +1,52 @@
+name: Business data (groups, passes, social links)
+
+on:
+  schedule:
+    - cron: "30 21 * * *"   # 21:30 UTC, after the daily refresh
+  workflow_dispatch:
+    inputs:
+      max_age:
+        description: "Re-enrich games older than this many days"
+        default: "7"
+        required: false
+      budget_minutes:
+        description: "Stop and save after this many minutes"
+        default: "50"
+        required: false
+
+permissions:
+  contents: write
+
+# its own lock: this job is slow and must never hold up player readings
+concurrency:
+  group: radar-enrich
+  cancel-in-progress: false
+
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Owner groups, game passes, social links
+        run: python scripts/enrich.py --max-age "${{ github.event.inputs.max_age || '7' }}" --budget-minutes "${{ github.event.inputs.budget_minutes || '50' }}"
+        env:
+          ROBLOX_COOKIE: ${{ secrets.ROBLOX_COOKIE }}
+
+      - name: Commit business data
+        run: |
+          git config user.name "roblox-radar bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/business.json
+          if git diff --cached --quiet; then
+            echo "nothing changed"
+          else
+            git commit -m "data: business refresh $(date -u +%Y-%m-%d)"
+            git pull --rebase -X theirs origin main
+            git push
+          fi

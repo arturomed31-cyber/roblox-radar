@@ -1,8 +1,10 @@
-"""Daily refresh for Roblox Radar.
+"""Refresh for Roblox Radar.
 
 Reads data/games.json, pulls fresh live stats for every tracked game from
 Roblox's public APIs, appends one reading per game to data/history.json and
-rewrites the live fields in data/games.json. Standard library only.
+rewrites the live fields in data/games.json. With --light only player counts
+and visits are read (about a minute). Slow business data (groups, passes,
+social links) lives in scripts/enrich.py. Standard library only.
 """
 import json
 import os
@@ -49,55 +51,6 @@ def get_json(url, tries=5, headers=None):
             print(f"  retry {attempt + 1}/{tries} after {wait}s: {e}", flush=True)
             time.sleep(wait)
     return None
-
-
-SOCIAL_TYPES = {
-    "discord": "discord", "youtube": "youtube", "twitter": "x", "x": "x", "tiktok": "tiktok",
-    "twitch": "twitch", "facebook": "facebook", "guilded": "guilded", "robloxgroup": "group",
-}
-
-
-def fetch_social_links(games, cookie):
-    """Roblox only serves a game's Social Links to a logged-in session."""
-    headers = {"Cookie": f".ROBLOSECURITY={cookie}"}
-    # probe: is the session valid at all, and which account is it?
-    try:
-        me = get_json("https://users.roblox.com/v1/users/authenticated", tries=2, headers=headers)
-        print(f"  session ok: logged in as user id {me.get('id') if me else '?'}", flush=True)
-    except Unauthorized as e:
-        print(f"ROBLOX_COOKIE is not a valid session ({e}). Copy .ROBLOSECURITY again and update the secret.", flush=True)
-        return 0
-    updated = 0
-    forbidden = 0
-    for i, g in enumerate(games, 1):
-        try:
-            d = get_json(f"https://games.roblox.com/v1/games/{g['id']}/social-links/list", tries=3, headers=headers)
-        except Unauthorized as e:
-            if e.code == 403:
-                # a few games refuse the request (restricted content); skip them, keep going
-                forbidden += 1
-                if forbidden == 1:
-                    print(f"  403 on game {g['id']} — skipping games that refuse social links", flush=True)
-                time.sleep(0.6)
-                continue
-            print(f"Session expired mid-run ({e}); stopping social links here.", flush=True)
-            return updated
-        if d is None:
-            continue
-        links = []
-        for item in d.get("data", []):
-            k = SOCIAL_TYPES.get(str(item.get("type", "")).lower())
-            if k and item.get("url"):
-                links.append({"k": k, "u": item["url"], "t": item.get("title") or ""})
-        if links or g.get("socials"):
-            g["socials"] = links
-            updated += 1
-        if i % 100 == 0:
-            print(f"  social links {i}/{len(games)}", flush=True)
-        time.sleep(0.6)
-    if forbidden:
-        print(f"  {forbidden} games refused social links (403)", flush=True)
-    return updated
 
 
 def batches(seq, size):
@@ -223,14 +176,8 @@ def main():
         if thumbs.get(gid):
             g["thumb"] = thumbs[gid]
 
-    cookie = os.environ.get("ROBLOX_COOKIE", "").strip()
     if light:
         print("light run: players/visits only", flush=True)
-    elif cookie:
-        n = fetch_social_links(games, cookie)
-        print(f"social links refreshed for {n} games", flush=True)
-    else:
-        print("ROBLOX_COOKIE not set; keeping social links found in descriptions only", flush=True)
 
     compact_history(history)
     games_doc["generated"] = stamp

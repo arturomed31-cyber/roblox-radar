@@ -11,10 +11,10 @@ on:
         required: false
       pages:
         description: "Search pages per keyword (each page = 40 results)"
-        default: "2"
+        default: "1"
         required: false
       skip_discovery:
-        description: "Skip discovery, only refresh stats and social links"
+        description: "Skip discovery, only refresh stats"
         type: boolean
         default: false
 
@@ -28,6 +28,7 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -40,14 +41,8 @@ jobs:
         run: python scripts/discover.py --min-players "${{ github.event.inputs.min_players || '1000' }}" --pages "${{ github.event.inputs.pages || '1' }}" --no-groups
         continue-on-error: true
 
-      - name: Pull live stats from Roblox
+      - name: Pull live stats from Roblox (votes, images)
         run: python scripts/update.py
-        env:
-          ROBLOX_COOKIE: ${{ secrets.ROBLOX_COOKIE }}
-
-      - name: Owner groups and monetization (weekly per game)
-        run: python scripts/enrich.py --max-age 7
-        continue-on-error: true
 
       - name: Discord alerts
         run: python scripts/alerts.py

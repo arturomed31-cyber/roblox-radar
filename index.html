@@ -1573,14 +1573,22 @@ document.addEventListener('keydown', e => { if(e.key === 'Escape' && !legalOverl
 /* ---------- boot ---------- */
 async function loadData(){
   const bust = '?v=' + Math.floor(Date.now() / 3600e3);
-  const [gamesDoc, hist, shared] = await Promise.all([
+  const [gamesDoc, hist, shared, biz] = await Promise.all([
     fetch('data/games.json' + bust).then(r => r.json()),
     fetch('data/history.json' + bust).then(r => r.json()),
-    fetch('data/notes.json' + bust).then(r => r.ok ? r.json() : {}).catch(() => ({}))
+    fetch('data/notes.json' + bust).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+    fetch('data/business.json' + bust).then(r => r.ok ? r.json() : {}).catch(() => ({}))
   ]);
   SHARED_NOTES = shared && typeof shared === 'object' ? shared : {};
+  const BIZ = biz && typeof biz === 'object' ? biz : {};
   const now = Date.now();
   gamesDoc.games.forEach(g => {
+    // business data (groups, passes, social links) lives in its own file
+    const b = BIZ[String(g.id)];
+    if (b) {
+      for (const k of ['gp', 'grp', 'vip', 'paid', 'enrichedAt']) if (b[k] !== undefined) g[k] = b[k];
+      if (Array.isArray(b.socials) && b.socials.length) g.socials = b.socials;
+    }
     g.age = g.created ? Math.floor((now - new Date(g.created)) / 86400e3) : null;
     g.upd = g.updated ? Math.floor((now - new Date(g.updated)) / 86400e3) : null;
     g.vpd = g.age ? Math.round(g.visits / g.age) : null;
