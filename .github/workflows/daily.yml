@@ -33,6 +33,8 @@ jobs:
 
       - name: Pull live stats from Roblox
         run: python scripts/update.py
+        env:
+          ROBLOX_COOKIE: ${{ secrets.ROBLOX_COOKIE }}
 
       - name: Commit updated data
         run: |

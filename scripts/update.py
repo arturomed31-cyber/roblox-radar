@@ -5,8 +5,10 @@ Roblox's public APIs, appends one reading per game to data/history.json and
 rewrites the live fields in data/games.json. Standard library only.
 """
 import json
+import os
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
@@ -21,17 +23,62 @@ PAUSE = 1.0
 UA = "roblox-radar/1.0 (+https://github.com)"
 
 
-def get_json(url, tries=5):
+class Unauthorized(Exception):
+    pass
+
+
+def get_json(url, tries=5, headers=None):
+    hdrs = {"User-Agent": UA}
+    if headers:
+        hdrs.update(headers)
     for attempt in range(tries):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": UA})
+            req = urllib.request.Request(url, headers=hdrs)
             with urllib.request.urlopen(req, timeout=30) as r:
                 return json.loads(r.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            if e.code in (401, 403):
+                raise Unauthorized(str(e))
+            wait = min(90, 5 * 2 ** attempt)
+            print(f"  retry {attempt + 1}/{tries} after {wait}s: {e}", flush=True)
+            time.sleep(wait)
         except Exception as e:  # rate limits, transient errors
             wait = min(90, 5 * 2 ** attempt)
             print(f"  retry {attempt + 1}/{tries} after {wait}s: {e}", flush=True)
             time.sleep(wait)
     return None
+
+
+SOCIAL_TYPES = {
+    "discord": "discord", "youtube": "youtube", "twitter": "x", "x": "x", "tiktok": "tiktok",
+    "twitch": "twitch", "facebook": "facebook", "guilded": "guilded", "robloxgroup": "group",
+}
+
+
+def fetch_social_links(games, cookie):
+    """Roblox only serves a game's Social Links to a logged-in session."""
+    headers = {"Cookie": f".ROBLOSECURITY={cookie}"}
+    updated = 0
+    for i, g in enumerate(games, 1):
+        try:
+            d = get_json(f"https://games.roblox.com/v1/games/{g['id']}/social-links/list", tries=3, headers=headers)
+        except Unauthorized:
+            print("ROBLOX_COOKIE was rejected (401/403). Social links left as they were; refresh the secret.", flush=True)
+            return updated
+        if d is None:
+            continue
+        links = []
+        for item in d.get("data", []):
+            k = SOCIAL_TYPES.get(str(item.get("type", "")).lower())
+            if k and item.get("url"):
+                links.append({"k": k, "u": item["url"], "t": item.get("title") or ""})
+        if links or g.get("socials"):
+            g["socials"] = links
+            updated += 1
+        if i % 100 == 0:
+            print(f"  social links {i}/{len(games)}", flush=True)
+        time.sleep(0.6)
+    return updated
 
 
 def batches(seq, size):
@@ -105,6 +152,13 @@ def main():
             g["icon"] = icons[gid]
         if thumbs.get(gid):
             g["thumb"] = thumbs[gid]
+
+    cookie = os.environ.get("ROBLOX_COOKIE", "").strip()
+    if cookie:
+        n = fetch_social_links(games, cookie)
+        print(f"social links refreshed for {n} games", flush=True)
+    else:
+        print("ROBLOX_COOKIE not set; keeping social links found in descriptions only", flush=True)
 
     games_doc["generated"] = stamp
     GAMES.write_text(json.dumps(games_doc, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

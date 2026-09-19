@@ -406,7 +406,7 @@ const SIGNAL_DEFS = [
   {key:'licensed-ip',tone:'risk',label:'Borrowed IP'},
   {key:'flagship',tone:'good',label:'Original flagships'}
 ];
-const SOCIAL_LABELS = {discord:'Discord', youtube:'YouTube', x:'X / Twitter', tiktok:'TikTok', group:'Linked group'};
+const SOCIAL_LABELS = {discord:'Discord', youtube:'YouTube', x:'X / Twitter', tiktok:'TikTok', twitch:'Twitch', facebook:'Facebook', guilded:'Guilded', group:'Linked group'};
 
 /* ---------- settings (per browser) ---------- */
 const SETTINGS_KEY = 'radar.settings.v1';
@@ -745,7 +745,7 @@ function openModal(idx){
   ];
 
   const socials = (g.socials || []).map(s =>
-    `<a class="link-btn" href="${esc(s.u)}" target="_blank" rel="noopener">${SOCIAL_LABELS[s.k] || s.k}</a>`
+    `<a class="link-btn" href="${esc(s.u)}" target="_blank" rel="noopener" title="${esc(s.t || s.u)}">${SOCIAL_LABELS[s.k] || s.k}</a>`
   ).join('');
 
   const hero = g.thumb
