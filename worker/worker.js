@@ -17,6 +17,9 @@
  *                        Worker's Cron Trigger start the hourly reading, since GitHub's own
  *                        schedule skips runs. Add a trigger "7 * * * *" under Settings → Triggers.
  *   GITHUB_REPO          (optional) "owner/repo", default arturomed31-cyber/roblox-radar
+ *   INBOX_CHANNEL        (optional) id of the #para-claude channel; with INBOX_KEY it enables
+ *   INBOX_KEY            GET /inbox?key=…&limit=20  (read recent messages, bot must see the channel)
+ *                        POST /say?key=…  {text}     (post as the bot into that channel)
  */
 
 const DEFAULT_SITE = 'https://roblox-radar.pages.dev';
@@ -45,6 +48,8 @@ export default {
       if (url.pathname === '/discord') return discord(req, env);
       if (url.pathname === '/register') return register(url, env);
       if (url.pathname === '/health') return json({ ok: true, t: Date.now() });
+      if (url.pathname === '/inbox') return inbox(req, url, env);
+      if (url.pathname === '/say') return say(req, url, env);
     } catch (e) {
       return json({ error: String(e && e.message || e) }, 500);
     }
@@ -105,6 +110,45 @@ async function live(req, url) {
   }
   const body = await res.text();
   return new Response(body, { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...corsHeaders(req) } });
+}
+
+/* ---------------- inbox: a channel people write to, read and answered by Claude via the bot ---------------- */
+function inboxAuth(url, env) {
+  return env.INBOX_KEY && env.INBOX_CHANNEL && url.searchParams.get('key') === env.INBOX_KEY;
+}
+async function inbox(req, url, env) {
+  if (!inboxAuth(url, env)) return json({ error: 'forbidden' }, 403);
+  const limit = Math.min(50, Math.max(1, Number(url.searchParams.get('limit') || 20)));
+  const after = url.searchParams.get('after');   // message id: only newer ones
+  const q = new URLSearchParams({ limit: String(limit) });
+  if (after) q.set('after', after);
+  const r = await fetch(`https://discord.com/api/v10/channels/${env.INBOX_CHANNEL}/messages?${q}`, {
+    headers: { 'authorization': `Bot ${env.DISCORD_TOKEN}`, 'user-agent': UA }
+  });
+  if (!r.ok) return json({ error: `discord ${r.status}`, detail: await r.text() }, 502);
+  const msgs = await r.json();
+  return json({
+    channel: env.INBOX_CHANNEL,
+    messages: msgs.reverse().map(m => ({
+      id: m.id, at: m.timestamp, from: m.author?.global_name || m.author?.username, bot: !!m.author?.bot,
+      text: m.content, attachments: (m.attachments || []).map(a => a.url)
+    }))
+  });
+}
+async function say(req, url, env) {
+  if (!inboxAuth(url, env)) return json({ error: 'forbidden' }, 403);
+  if (req.method !== 'POST') return json({ error: 'POST only' }, 405);
+  let body = {};
+  try { body = await req.json(); } catch (e) {}
+  const text = String(body.text || '').slice(0, 1900);
+  if (!text) return json({ error: 'text required' }, 400);
+  const r = await fetch(`https://discord.com/api/v10/channels/${body.channel || env.INBOX_CHANNEL}/messages`, {
+    method: 'POST',
+    headers: { 'authorization': `Bot ${env.DISCORD_TOKEN}`, 'content-type': 'application/json', 'user-agent': UA },
+    body: JSON.stringify({ content: text, allowed_mentions: { parse: [] } })
+  });
+  const out = await r.text();
+  return new Response(out, { status: r.status, headers: { 'content-type': 'application/json' } });
 }
 
 /* ---------------- site data (cached 5 min in memory + edge cache) ---------------- */
