@@ -500,6 +500,26 @@ tr.st.open .chev{transform:rotate(90deg);}
 .live-status{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-faint);margin-top:6px;}
 .live-status.err{color:var(--bad);}
 @media (prefers-reduced-motion:reduce){.live-box.on .t .dot{animation:none;}}
+
+/* market-style ticker */
+.ticker{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:9px;background:var(--panel);margin:-6px 0 16px;height:34px;
+  mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);}
+.ticker[hidden]{display:none;}
+.ticker-track{display:flex;gap:0;white-space:nowrap;width:max-content;height:100%;align-items:center;}
+.tk{display:inline-flex;align-items:center;gap:7px;padding:0 18px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-dim);border-right:1px solid var(--border);height:100%;cursor:pointer;}
+.tk:hover{background:var(--panel-2);color:var(--text);}
+.tk .nm{color:var(--text);font-weight:600;font-family:'Public Sans',system-ui,sans-serif;max-width:190px;overflow:hidden;text-overflow:ellipsis;}
+.tk .v{font-variant-numeric:tabular-nums;}
+.tk .ch{font-variant-numeric:tabular-nums;font-weight:600;}
+.tk .ch.up{color:var(--good);} .tk .ch.down{color:var(--bad);} .tk .ch.flat{color:var(--text-faint);}
+.tk .live{width:6px;height:6px;border-radius:50%;background:var(--good);}
+@media (prefers-reduced-motion:no-preference){
+  .ticker-track{animation:tickerMove var(--tk-dur,90s) linear infinite;}
+  .ticker:hover .ticker-track{animation-play-state:paused;}
+  @keyframes tickerMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .tk .v.bump{animation:bump .5s ease-out;}
+  @keyframes bump{from{color:var(--good)}to{color:inherit}}
+}
 </style>
 </head>
 <body>
@@ -532,6 +552,8 @@ tr.st.open .chev{transform:rotate(90deg);}
       </button>
     </div>
   </header>
+
+  <div class="ticker" id="ticker" aria-hidden="true" hidden><div class="ticker-track" id="tickerTrack"></div></div>
 
   <div class="disclaimer" id="disclaimer" hidden role="note">
     <span class="ic">!</span><span class="tx" id="dcText"></span><button type="button" id="dcClose"></button>
@@ -946,6 +968,7 @@ function applyLanguage(){
     renderMarket();
     renderWatch();
     renderStudios();
+    buildTicker();
     if(currentGame) openModal(currentGame._i, currentRange);
   }
   document.getElementById('watchTab').textContent = tw('w_view') + (WATCH.size ? ` (${WATCH.size})` : '');
@@ -1963,6 +1986,7 @@ async function liveTick(id){
       if(L.samples.length > 2000) L.samples.shift();
       L.last = Date.now(); L.err = false;
       liveApply(g, d);
+      tickerUpdate(g);
     }
   } catch (e) { L.err = true; }
   if(L.until && Date.now() >= L.until) liveStop(id, true);
@@ -1975,6 +1999,7 @@ function liveStart(g, every, dur){
   LIVE.set(String(g.id), L);
   liveTick(g.id);
   renderLive(g);
+  buildTicker();
 }
 function liveStop(id, finished){
   const L = LIVE.get(String(id)); if(!L) return;
@@ -2049,6 +2074,31 @@ function buildPulse(){
   document.getElementById('pulseDown').setAttribute('d', d.down);
 }
 buildPulse();
+
+/* ---------- ticker: top games with their 24 h change, scrolling like a market tape ---------- */
+function buildTicker(){
+  const el = document.getElementById('ticker'), track = document.getElementById('tickerTrack');
+  if(!GAMES.length) return;
+  const rows = [...GAMES].sort((a,b) => (b.playing||0) - (a.playing||0)).slice(0, 40);
+  const item = g => {
+    const c = g.d1, cls = c == null ? 'flat' : c >= 1 ? 'up' : c <= -1 ? 'down' : 'flat';
+    const arrow = cls === 'up' ? '▲' : cls === 'down' ? '▼' : '•';
+    return `<span class="tk" data-open="${g._i}"><span class="nm">${esc(g.name)}</span><span class="v" data-tk="${g.id}">${fmtNum(g.playing)}</span><span class="ch ${cls}">${arrow} ${c == null ? '—' : fmtPct(c)}</span>${LIVE.get(String(g.id))?.timer ? '<span class="live"></span>' : ''}</span>`;
+  };
+  const html = rows.map(item).join('');
+  track.innerHTML = html + html;   // duplicated for a seamless loop
+  el.style.setProperty('--tk-dur', Math.round(rows.length * 3.2) + 's');
+  el.hidden = false;
+}
+function tickerUpdate(g){
+  document.querySelectorAll(`[data-tk="${g.id}"]`).forEach(v => {
+    const nv = fmtNum(g.playing);
+    if(v.textContent !== nv){ v.textContent = nv; v.classList.remove('bump'); void v.offsetWidth; v.classList.add('bump'); }
+  });
+}
+document.getElementById('tickerTrack').addEventListener('click', e => {
+  const t = e.target.closest('[data-open]'); if(t) openModal(Number(t.dataset.open));
+});
 
 /* ---------- Discord invite ---------- */
 const DISCORD_INVITE = 'https://discord.gg/qCHUJu4RyJ';   // set to the server's permanent invite link, e.g. 'https://discord.gg/xxxx'
