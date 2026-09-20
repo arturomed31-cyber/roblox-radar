@@ -212,6 +212,12 @@ td{padding:8px 12px;font-size:13px;vertical-align:middle;}
 
 /* ---------- settings ---------- */
 .header-right{display:flex;align-items:flex-end;gap:14px;}
+.discord-btn{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 13px;border-radius:9px;border:1px solid #5865F2;background:color-mix(in srgb,#5865F2 18%,transparent);color:var(--text);font-size:12.5px;font-weight:600;text-decoration:none;white-space:nowrap;}
+.discord-btn:hover{background:#5865F2;color:#fff;}
+.discord-btn svg{width:18px;height:18px;fill:currentColor;}
+.discord-btn[hidden]{display:none;}
+.footer-discord a{color:#8b93ff;text-decoration:none;}
+.footer-discord a:hover{text-decoration:underline;}
 .gear-btn{width:38px;height:38px;border-radius:9px;border:1px solid var(--border);background:var(--panel);color:var(--text-dim);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
 .gear-btn:hover{color:var(--text);border-color:var(--accent);}
 .gear-btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
@@ -260,6 +266,7 @@ td{padding:8px 12px;font-size:13px;vertical-align:middle;}
 .disclaimer button{font-family:inherit;font-size:11.5px;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--panel);color:var(--text-dim);cursor:pointer;}
 .disclaimer button:hover{color:var(--text);border-color:var(--text-faint);}
 .footer-dc{margin-top:6px;color:var(--warn);}
+.footer-discord{margin-top:6px;}
 .col-chips{display:flex;flex-wrap:wrap;gap:6px;}
 .col-chips .chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-text);}
 .settings-body{max-height:85vh;overflow-y:auto;}
@@ -439,6 +446,7 @@ tr.st.open .chev{transform:rotate(90deg);}
     </div>
     <div class="header-right">
       <div class="scan-meta" id="scanMeta"></div>
+      <a class="discord-btn" id="discordBtn" hidden target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.2.4a18 18 0 0 1 4.6 2.3 15.5 15.5 0 0 0-15.6 0A18 18 0 0 1 8.8 3.4L8.6 3a19.8 19.8 0 0 0-4.9 1.4C.6 9 0 13.4.3 17.8a19.9 19.9 0 0 0 6 3l1.3-2a12.9 12.9 0 0 1-2-1l.5-.4a14.2 14.2 0 0 0 11.8 0l.5.4-2 1 1.3 2a19.8 19.8 0 0 0 6-3c.4-5.1-.7-9.5-3.4-13.4ZM8.5 15.1c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm7 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z"/></svg><span id="discordBtnText"></span></a>
       <button class="gear-btn" id="settingsBtn" type="button" aria-label="Settings" title="Settings" data-i18n-title="settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
@@ -522,7 +530,7 @@ tr.st.open .chev{transform:rotate(90deg);}
     <div class="studio-hint" id="stHint"></div>
   </div>
 
-  <footer><div id="footerNote"></div><div class="footer-dc" id="footerDc"></div><div class="legal-links"><button type="button" id="legalBtn"></button></div></footer>
+  <footer><div id="footerNote"></div><div class="footer-dc" id="footerDc"></div><div class="footer-discord" id="footerDiscord" hidden></div><div class="legal-links"><button type="button" id="legalBtn"></button></div></footer>
 </div>
 
 <div class="overlay" id="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -815,6 +823,7 @@ function applyLanguage(){
   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
   renderDisclaimer();
   renderLangDd();
+  renderDiscord();
 
   const age = document.getElementById('ageSelect');
   age.innerHTML = AGE_OPTS.map(([v,k]) => `<option value="${v}">${t(k)}</option>`).join('');
@@ -1798,6 +1807,27 @@ function bindCompareHover(games){
   wrap.addEventListener('mouseleave', leave);
   wrap.addEventListener('touchstart', e => move(e.touches[0]), {passive:true});
   wrap.addEventListener('touchmove', e => move(e.touches[0]), {passive:true});
+}
+
+/* ---------- Discord invite ---------- */
+const DISCORD_INVITE = '';   // set to the server's permanent invite link, e.g. 'https://discord.gg/xxxx'
+const DISCORD_I18N = {
+  en:{btn:'Join the Discord', foot:'Alerts (spikes, drops, newcomers, milestones) are posted live in our Discord:'},
+  es:{btn:'Únete al Discord', foot:'Las alertas (subidas, caídas, nuevos, hitos) se publican en vivo en nuestro Discord:'},
+  pt:{btn:'Entrar no Discord', foot:'Os alertas (altas, quedas, novos, marcos) são publicados ao vivo no nosso Discord:'},
+  fr:{btn:'Rejoindre le Discord', foot:'Les alertes (hausses, baisses, nouveautés, paliers) sont publiées en direct sur notre Discord :'},
+  de:{btn:'Discord beitreten', foot:'Alarme (Anstiege, Einbrüche, Neuzugänge, Meilensteine) erscheinen live in unserem Discord:'},
+  it:{btn:'Entra nel Discord', foot:'Gli avvisi (picchi, cali, novità, traguardi) vengono pubblicati in tempo reale nel nostro Discord:'},
+  ru:{btn:'Присоединиться к Discord', foot:'Оповещения (рост, падения, новинки, рубежи) публикуются в нашем Discord:'},
+  ja:{btn:'Discordに参加', foot:'アラート（急上昇・急落・新着・節目）はDiscordでリアルタイムに配信しています：'}
+};
+function renderDiscord(){
+  const d = DISCORD_I18N[settings.lang] || DISCORD_I18N.en;
+  const btn = document.getElementById('discordBtn'), foot = document.getElementById('footerDiscord');
+  btn.hidden = !DISCORD_INVITE; foot.hidden = !DISCORD_INVITE;
+  if(!DISCORD_INVITE) return;
+  btn.href = DISCORD_INVITE; document.getElementById('discordBtnText').textContent = d.btn;
+  foot.innerHTML = `${esc(d.foot)} <a href="${esc(DISCORD_INVITE)}" target="_blank" rel="noopener">${esc(DISCORD_INVITE.replace(/^https?:\/\//, ''))}</a>`;
 }
 
 /* ---------- studios: games grouped by owner ---------- */
