@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="fonts/fonts.css">
 <script src="i18n.js"></script>
 <script src="i18n_more.js"></script>
+<script src="i18n_method.js"></script>
 <style>
 :root{
   color-scheme:dark;
@@ -281,6 +282,9 @@ td{padding:8px 12px;font-size:13px;vertical-align:middle;}
 .legal-body a{color:var(--accent);}
 .legal-meta{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-faint);margin-top:14px;}
 footer .legal-links{margin-top:8px;}
+.method-link{background:none;border:none;color:var(--accent);font-family:inherit;font-size:inherit;cursor:pointer;padding:0;text-decoration:underline;}
+.method-link:hover{color:var(--text);}
+.legal-body p{margin:0 0 10px;}
 footer .legal-links button{background:none;border:none;color:var(--accent);font-family:inherit;font-size:11.5px;cursor:pointer;padding:0;text-decoration:underline;}
 footer .legal-links button:hover{color:var(--text);}
 
@@ -562,13 +566,21 @@ tr.st.open .chev{transform:rotate(90deg);}
     <div class="studio-hint" id="stHint"></div>
   </div>
 
-  <footer><div id="footerNote"></div><div class="footer-dc" id="footerDc"></div><div class="footer-discord" id="footerDiscord" hidden></div><div class="legal-links"><button type="button" id="legalBtn"></button></div></footer>
+  <footer><div id="footerNote"></div><div class="footer-dc" id="footerDc"></div><div class="footer-discord" id="footerDiscord" hidden></div><div class="legal-links"><button type="button" id="methodBtn"></button> · <button type="button" id="legalBtn"></button></div></footer>
 </div>
 
 <div class="overlay" id="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal" id="modal"></div>
 </div>
 
+<div class="overlay" id="methodOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="methodTitle">
+  <div class="modal legal">
+    <div class="legal-body">
+      <h2 class="settings-title" id="methodTitle"><span id="methodTitleText"></span> <button type="button" id="methodClose" aria-label="Close">×</button></h2>
+      <div id="methodContent"></div>
+    </div>
+  </div>
+</div>
 <div class="overlay" id="legalOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="legalTitle">
   <div class="modal legal">
     <div class="legal-body">
@@ -856,6 +868,7 @@ function applyLanguage(){
   renderDisclaimer();
   renderLangDd();
   renderDiscord();
+  document.getElementById('methodBtn').textContent = tm('link');
 
   const age = document.getElementById('ageSelect');
   age.innerHTML = AGE_OPTS.map(([v,k]) => `<option value="${v}">${t(k)}</option>`).join('');
@@ -882,6 +895,7 @@ function applyLanguage(){
     document.getElementById('footerNote').textContent = t('footer');
     document.getElementById('legalBtn').textContent = t('lg_link');
     if(!legalOverlay.hidden) document.getElementById('legalContent').innerHTML = t('lg_html');
+    if(!methodOverlay.hidden) openMethod();
     const days = SAMPLE_MS.length > 1 ? Math.max(1, Math.round((SAMPLE_MS[SAMPLE_MS.length-1] - SAMPLE_MS[0]) / 86400e3)) : 0;
     document.getElementById('trendCoverage').textContent = t('coverage')(days, SAMPLE_MS.length);
     render();
@@ -1387,7 +1401,7 @@ function openModal(idx, rangeKey){
       <div class="score-box">
         <div class="score-head">
           <span class="score-pill ${scoreClass(g.score)} score-big" style="padding:6px 14px">${g.score}</span>
-          <div><div class="t">${t('sc_title')} ${trendBadge(g.trend)}</div><div class="hint">${t('sc_hint')}</div></div>
+          <div><div class="t">${t('sc_title')} ${trendBadge(g.trend)}</div><div class="hint">${t('sc_hint')} <button type="button" class="method-link" data-method>${tm('score')}</button></div></div>
         </div>
         <div class="trend-row">
           <div>${t('st_d1')} <b>${deltaHtml(g.d1)}</b></div>
@@ -1414,7 +1428,7 @@ function openModal(idx, rangeKey){
           <div class="score-part"><span>${t('bz_rev')}</span><b class="${g.rev ? 'pos' : ''}">${g.rev != null ? '$' + fmtFull(g.revLow) + '–' + fmtFull(g.revHigh) + ' ' + t('bz_perMonth') : '—'}</b></div>
           <div class="score-part"><span>${t('bz_val')}</span><b>${g.rev != null ? '$' + fmtNum(g.revLow * 12) + '–' + fmtNum(g.revHigh * 24) : '—'}</b></div>
         </div>
-        <div class="hint" style="margin-top:8px;font-size:11px;color:var(--text-faint);line-height:1.5">${g.enrichedAt ? t('bz_note') : t('bz_pending') + ' ' + t('bz_note')}</div>
+        <div class="hint" style="margin-top:8px;font-size:11px;color:var(--text-faint);line-height:1.5">${g.enrichedAt ? t('bz_note') : t('bz_pending') + ' ' + t('bz_note')} <button type="button" class="method-link" data-method>${tm('score')}</button></div>
       </div>
 
       <div class="chart-box" id="chartBox"></div>
@@ -2236,6 +2250,29 @@ function closeLegal(){
   if(legalReturnFocus) legalReturnFocus.focus();
 }
 document.getElementById('legalBtn').addEventListener('click', openLegal);
+
+/* ---------- "how it's calculated" ---------- */
+const tm = k => ((I18N.METHOD || {})[settings.lang] || I18N.METHOD.en)[k];
+const methodOverlay = document.getElementById('methodOverlay');
+let methodReturnFocus = null;
+function openMethod(){
+  methodReturnFocus = document.activeElement;
+  document.getElementById('methodTitleText').textContent = tm('title');
+  document.getElementById('methodContent').innerHTML = tm('html');
+  methodOverlay.hidden = false;
+  document.body.style.overflow = 'hidden';
+  document.getElementById('methodClose').focus();
+}
+function closeMethod(){
+  methodOverlay.hidden = true;
+  if(overlay.hidden && settingsOverlay.hidden && legalOverlay.hidden) document.body.style.overflow = '';
+  if(methodReturnFocus) methodReturnFocus.focus();
+}
+document.getElementById('methodBtn').addEventListener('click', openMethod);
+document.getElementById('methodClose').addEventListener('click', closeMethod);
+methodOverlay.addEventListener('click', e => { if(e.target === methodOverlay) closeMethod(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !methodOverlay.hidden){ e.stopPropagation(); closeMethod(); } }, true);
+modal.addEventListener('click', e => { if(e.target.closest('[data-method]')) openMethod(); });
 document.getElementById('legalClose').addEventListener('click', closeLegal);
 legalOverlay.addEventListener('click', e => { if(e.target === legalOverlay) closeLegal(); });
 document.addEventListener('keydown', e => { if(e.key === 'Escape' && !legalOverlay.hidden) closeLegal(); });
@@ -2270,6 +2307,7 @@ async function loadData(){
 }
 async function init(){
   document.getElementById('legalBtn').textContent = t('lg_link');
+  document.getElementById('methodBtn').textContent = tm('link');
   applyLanguage();
   document.getElementById('tbody').innerHTML = Array.from({length: 8}, () =>
     `<tr><td colspan="7" style="padding:0"><div class="skel"><i class="ico"></i><div><i class="w1"></i><i class="w2"></i></div><i class="w3"></i><i class="num"></i><i class="num"></i></div></td></tr>`).join('');
