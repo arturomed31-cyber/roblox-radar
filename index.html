@@ -67,7 +67,7 @@ header{
 .pulse{position:absolute !important;left:-16px;right:-40px;top:-10px;height:calc(100% + 20px);width:auto;pointer-events:none;overflow:visible;z-index:0;opacity:.85;}
 .pulse-line{fill:none;stroke:var(--accent);stroke-width:1.7;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke;}
 .pulse-line.up{stroke:var(--good);}
-.pulse-line.down{stroke:var(--bad);}
+.pulse-line.down{stroke:var(--risk);}
 .pulse-line.flat{stroke:var(--text-faint);opacity:.6;}
 @media (prefers-reduced-motion:no-preference){
   .pulse-track{animation:pulseMove 11s linear infinite;}
@@ -442,7 +442,7 @@ footer{margin-top:20px;font-size:11.5px;color:var(--text-faint);font-family:'IBM
 .star-btn.on{color:var(--warn);}
 .link-btn.star.on{border-color:var(--warn);color:var(--warn);}
 .watch-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px;}
-.watch-tools .share-btn.danger:hover{border-color:var(--bad);color:var(--bad);}
+.watch-tools .share-btn.danger:hover{border-color:var(--risk);color:var(--risk);}
 .watch-empty{padding:40px 20px;text-align:center;color:var(--text-dim);border:1px dashed var(--border);border-radius:10px;font-size:13.5px;line-height:1.6;}
 .watch-empty b{color:var(--warn);}
 .cmp-box{border:1px solid var(--border);border-radius:10px;background:var(--panel);padding:14px 16px;margin-bottom:14px;}
@@ -491,14 +491,14 @@ tr.st.open .chev{transform:rotate(90deg);}
 .live-ctrl select{padding:6px 8px;font-size:12px;}
 .live-ctrl .lbl{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-faint);}
 .live-ctrl button{font-family:inherit;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:7px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-text);cursor:pointer;}
-.live-ctrl button.stop{background:transparent;color:var(--bad);border-color:var(--bad);}
+.live-ctrl button.stop{background:transparent;color:var(--risk);border-color:var(--risk);}
 .live-ctrl button:disabled{opacity:.5;cursor:not-allowed;}
 .live-stats{display:flex;flex-wrap:wrap;gap:8px 22px;margin:10px 0 6px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);}
 .live-stats b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums;}
 .live-stats .big{font-size:22px;color:var(--good);}
 .live-spark{display:block;width:100%;height:auto;margin-top:4px;}
 .live-status{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-faint);margin-top:6px;}
-.live-status.err{color:var(--bad);}
+.live-status.err{color:var(--risk);}
 @media (prefers-reduced-motion:reduce){.live-box.on .t .dot{animation:none;}}
 
 /* market-style ticker */
@@ -511,7 +511,7 @@ tr.st.open .chev{transform:rotate(90deg);}
 .tk .nm{color:var(--text);font-weight:600;font-family:'Public Sans',system-ui,sans-serif;max-width:190px;overflow:hidden;text-overflow:ellipsis;}
 .tk .v{font-variant-numeric:tabular-nums;}
 .tk .ch{font-variant-numeric:tabular-nums;font-weight:600;}
-.tk .ch.up{color:var(--good);} .tk .ch.down{color:var(--bad);} .tk .ch.flat{color:var(--text-faint);}
+.tk .ch.up{color:var(--good);} .tk .ch.down{color:var(--risk);} .tk .ch.flat{color:var(--text-faint);}
 .tk .live{width:6px;height:6px;border-radius:50%;background:var(--good);}
 @media (prefers-reduced-motion:no-preference){
   .ticker-track{animation:tickerMove var(--tk-dur,90s) linear infinite;}
@@ -2042,7 +2042,7 @@ function renderLive(g){
     const delta = last - first, dp = first ? Math.round(delta / first * 100) : 0;
     body = `<div class="live-stats">
       <div>${tl('now')} <b class="big">${fmtFull(last)}</b></div>
-      <div>${tl('since')} <b class="${delta > 0 ? 'pos' : delta < 0 ? 'neg' : ''}" style="color:${delta > 0 ? 'var(--good)' : delta < 0 ? 'var(--bad)' : 'inherit'}">${delta > 0 ? '+' : ''}${fmtFull(delta)} (${dp > 0 ? '+' : ''}${dp}%)</b></div>
+      <div>${tl('since')} <b class="${delta > 0 ? 'pos' : delta < 0 ? 'neg' : ''}" style="color:${delta > 0 ? 'var(--good)' : delta < 0 ? 'var(--risk)' : 'inherit'}">${delta > 0 ? '+' : ''}${fmtFull(delta)} (${dp > 0 ? '+' : ''}${dp}%)</b></div>
       <div>${tl('min')} <b>${fmtFull(Math.min(...vs))}</b></div><div>${tl('max')} <b>${fmtFull(Math.max(...vs))}</b></div>
       <div><b>${vs.length}</b> ${tl('n')}</div><div>${tl('last')} <b>${hhmmss(L.last)}</b></div>
     </div>${liveSpark(L.samples)}
