@@ -1119,9 +1119,17 @@ function openNoteForm(g, tMs, existing){
   form.hidden = false;
   form.style.left = Math.max(4, Math.min(px, r.width - 340)) + 'px';
   form.style.top = '8px';
+  // pin a marker where the click landed and freeze the hover cursor while the form is open
+  svg.querySelector('#pendingMark')?.remove();
+  const mx = geom.x(tMs).toFixed(1);
+  svg.insertAdjacentHTML('beforeend', `<g id="pendingMark" pointer-events="none">
+    <line x1="${mx}" y1="${geom.PT}" x2="${mx}" y2="${geom.H - geom.PB}" stroke="var(--warn)" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <circle cx="${mx}" cy="${geom.H - geom.PB}" r="4.5" fill="var(--warn)"/></g>`);
+  ['chartCursor', 'chartDot'].forEach(id => document.getElementById(id)?.setAttribute('visibility', 'hidden'));
+  const tipEl = document.getElementById('chartTip'); if(tipEl) tipEl.hidden = true;
   const input = document.getElementById('noteText');
   input.focus();
-  const close = () => { form.hidden = true; form.innerHTML = ''; };
+  const close = () => { form.hidden = true; form.innerHTML = ''; svg.querySelector('#pendingMark')?.remove(); };
   const save = () => {
     const text = input.value.trim();
     if(!text){ close(); return; }
@@ -1146,6 +1154,7 @@ function bindNotes(g){
       }
       if(!e.target.closest('#chartHit')) return;
       const r = svg.getBoundingClientRect();
+      if(!r.width) return;
       const sx = (e.clientX - r.left) * geom.W / r.width;
       let tMs = geom.t0 + ((sx - geom.PL) / (geom.W - geom.PL - geom.PR)) * geom.span;
       tMs = Math.max(geom.t0, Math.min(geom.t0 + geom.span, Math.round(tMs / 60000) * 60000));
@@ -1173,6 +1182,8 @@ function bindChartHover(){
   const dot = document.getElementById('chartDot');
   const wrap = document.getElementById('chartWrap');
   const move = e => {
+    const form = document.getElementById('noteForm');
+    if(form && !form.hidden) return;   // a note is being written: keep the pinned marker still
     const r = svg.getBoundingClientRect();
     const sx = (e.clientX - r.left) * geom.W / r.width;
     const tt = geom.t0 + ((sx - geom.PL) / (geom.W - geom.PL - geom.PR)) * geom.span;

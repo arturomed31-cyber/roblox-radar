@@ -1,6 +1,8 @@
 name: Discover games (parallel sweep)
 
 on:
+  schedule:
+    - cron: "0 18 * * 0"   # Sundays 18:00 UTC: deep sweep, 3 pages per keyword
   workflow_dispatch:
     inputs:
       min_players:
@@ -14,10 +16,6 @@ on:
 
 permissions:
   contents: write
-
-concurrency:
-  group: radar-data
-  cancel-in-progress: false
 
 jobs:
   sweep:
@@ -44,6 +42,10 @@ jobs:
     needs: sweep
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    # only the merge touches games.json, so only it takes the data lock
+    concurrency:
+      group: radar-data
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
