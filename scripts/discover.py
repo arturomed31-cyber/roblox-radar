@@ -72,13 +72,20 @@ GENRE_MAP = {
 ANIME_WORDS = ["anime", "naruto", "one piece", "dragon ball", "jujutsu", "demon slayer", "bleach", "attack on titan",
                "blue lock", "solo leveling", "goku", "manga", "shinobi", "hunter x", "my hero", "gojo", "luffy",
                "one punch", "chainsaw man", "umamusume", "devil fruit"]
-LICENSED_WORDS = ["naruto", "one piece", "dragon ball", "jujutsu kaisen", "demon slayer", "bleach", "attack on titan",
-                  "blue lock", "solo leveling", "my hero academia", "one punch", "sonic", "mario", "pokemon", "pokémon",
+# IP owned by someone else. Matched on the game NAME with word boundaries; only the multi-word
+# "strong" terms are also looked for in descriptions, where single words (sonic, marvel, granny…)
+# produced far too many false positives.
+LICENSED_WORDS = ["naruto", "one piece", "dragon ball", "jujutsu kaisen", "demon slayer", "attack on titan",
+                  "blue lock", "solo leveling", "my hero academia", "one punch man", "sonic", "mario", "pokemon", "pokémon",
                   "squid game", "spongebob", "nfl", "fifa", "nba", "five nights", "fnaf", "undertale", "deltarune",
-                  "death note", "walking dead", "scp", "hello kitty", "sanrio", "fortnite", "among us", "kaiju no",
+                  "death note", "walking dead", "hello kitty", "sanrio", "fortnite", "among us", "kaiju no",
                   "chainsaw man", "doraemon", "hunter x hunter", "stranger things", "barbie", "disney", "marvel",
-                  "batman", "spider-man", "star wars", "harry potter", "transformers", "hot wheels", "umamusume",
-                  "skibidi", "mrbeast", "simpsons", "hello neighbor", "granny", "gorilla tag", "tesla"]
+                  "batman", "spider-man", "spiderman", "star wars", "harry potter", "transformers", "hot wheels",
+                  "umamusume", "mrbeast", "simpsons", "hello neighbor", "poppy playtime", "huggy wuggy", "minecraft",
+                  "pikachu", "goku", "luffy", "gojo", "sasuke", "itadori", "tanjiro", "kirby", "zelda", "godzilla",
+                  "jurassic", "minions", "peppa pig", "bluey", "paw patrol", "lego", "nerf", "wwe", "ufc", "f1",
+                  "sponge bob", "digital circus", "amazing digital circus", "garten of banban", "grimace"]
+LICENSED_STRONG = [w for w in LICENSED_WORDS if " " in w or "-" in w] + ["five nights at freddy", "squid game", "digital circus"]
 
 
 # ---------------------------------------------------------------- http
@@ -203,8 +210,12 @@ def classify(name, desc, genre_l1):
     if re.search(r"\brng\b|gacha|roll for|hatch eggs|summon units|luck multiplier|spin to|open packs|unbox", t):
         tags.add("rng-gacha")
     if any(w in t for w in ANIME_WORDS): tags.add("anime")
-    if any(w in t for w in LICENSED_WORDS): tags.add("licensed-ip")
-    if re.search(r"inspired by|fan game|fangame|based on the (anime|series|game|show)|tribute to", d): tags.add("copycat")
+    if any(re.search(r"(?<![a-z])" + re.escape(w) + r"(?![a-z])", n) for w in LICENSED_WORDS): tags.add("licensed-ip")
+    elif any(w in d for w in LICENSED_STRONG): tags.add("licensed-ip")
+    # "inspired by" alone was far too loose (inspired by real life, by friends, by a dream…)
+    if re.search(r"fan[- ]?game|fan[- ]made|tribute to|based on the (anime|manga|series|game|show|movie)|inspired by (the )?(anime|manga|game|show|movie|series)|remake of|recreation of|clone of", d):
+        tags.add("copycat")
+    if "tower-defense" in tags: tags.discard("tower")
     return cat, sorted(tags)
 
 
