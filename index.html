@@ -64,20 +64,19 @@ body{
 .wrap{max-width:1240px;margin:0 auto;}
 
 header{
+  position:relative;
   display:flex;flex-wrap:wrap;gap:14px 32px;align-items:flex-end;justify-content:space-between;
   padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:20px;
 }
 .title-wrap{position:relative;display:inline-block;}
 .title-wrap > *{position:relative;}
-.pulse{position:absolute !important;left:calc(100% + 10px);top:-4px;height:calc(100% + 8px);width:min(520px,38vw);pointer-events:none;overflow:visible;z-index:0;opacity:.9;}
+.pulse{position:absolute !important;left:0;top:0;height:40px;width:0;pointer-events:none;overflow:visible;z-index:0;opacity:.9;}
 @media (max-width:700px){.pulse{display:none;}}
 .pulse-line{fill:none;stroke:var(--accent);stroke-width:1.7;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke;}
 .pulse-line.up{stroke:var(--good);}
 .pulse-line.down{stroke:var(--risk);}
 .pulse-line.flat{stroke:var(--text-faint);opacity:.6;}
 @media (prefers-reduced-motion:no-preference){
-  .pulse-track{animation:pulseMove 11s linear infinite;}
-  @keyframes pulseMove{from{transform:translateX(-900px)}to{transform:translateX(0)}}
   .pulse-line{stroke-dasharray:1 0;}
 }
 h1{
@@ -531,9 +530,7 @@ tr.st.open .chev{transform:rotate(90deg);}
 
 <div class="wrap">
   <header>
-    <div>
-      <div class="title-wrap">
-      <svg class="pulse" viewBox="0 0 900 120" preserveAspectRatio="none" aria-hidden="true">
+    <svg class="pulse" viewBox="0 0 900 120" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id="pulseFade" x1="0" x2="1">
             <stop offset="0" stop-color="var(--accent)" stop-opacity="0"/><stop offset=".18" stop-color="var(--accent)" stop-opacity=".55"/>
@@ -545,6 +542,9 @@ tr.st.open .chev{transform:rotate(90deg);}
           <path class="pulse-line flat" id="pulseFlat"/><path class="pulse-line up" id="pulseUp"/><path class="pulse-line down" id="pulseDown"/>
         </g></g>
       </svg>
+    <div>
+      <div class="title-wrap">
+
       <h1>Roblox Radar</h1>
       </div>
       <div class="sub" data-i18n="subtitle"></div>
@@ -2109,6 +2109,17 @@ function pulsePoints(){
   pts.push([900,80]);
   return pts;
 }
+function layoutPulse(){
+  const svg = document.querySelector('.pulse'), h1 = document.querySelector('h1'), header = document.querySelector('header');
+  if(!svg || !h1) return;
+  const hr = header.getBoundingClientRect(), r = h1.getBoundingClientRect();
+  const left = r.right - hr.left + 12, width = hr.width - left;
+  svg.style.left = left + 'px'; svg.style.top = (r.top - hr.top - 4) + 'px';
+  svg.style.height = (r.height + 8) + 'px'; svg.style.width = Math.max(0, width) + 'px';
+  PX.scale = width > 0 ? width / 900 : 1;   // screen px per viewBox unit
+}
+const PX = {x: -900, scale: 1};
+window.addEventListener('resize', layoutPulse);
 function buildPulse(){
   const pts = pulsePoints();
   const all = pts.concat(pts.slice(1).map(([x,y]) => [x + 900, y]));   // two copies for a seamless loop
@@ -2121,8 +2132,10 @@ function buildPulse(){
   document.getElementById('pulseFlat').setAttribute('d', d.flat);
   document.getElementById('pulseUp').setAttribute('d', d.up);
   document.getElementById('pulseDown').setAttribute('d', d.down);
+  layoutPulse();
 }
 buildPulse();
+document.fonts?.ready?.then(layoutPulse);
 
 /* ---------- ticker: top games with their 24 h change, scrolling like a market tape ---------- */
 function buildTicker(){
@@ -2154,6 +2167,11 @@ function tickerRun(){
     const half = track.scrollWidth / 2;
     if(half && TK.x <= -half) TK.x += half;
     track.style.transform = `translateX(${TK.x.toFixed(2)}px)`;
+    // heartbeat: same speed in screen pixels, travelling left → right
+    PX.x += TK.v * dt / PX.scale;
+    if(PX.x >= 0) PX.x -= 900;
+    const pt = document.getElementById('pulseTrack');
+    if(pt) pt.setAttribute('transform', `translate(${PX.x.toFixed(2)} 0)`);
     TK.raf = requestAnimationFrame(step);
   };
   TK.raf = requestAnimationFrame(step);
