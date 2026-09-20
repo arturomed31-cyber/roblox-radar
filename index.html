@@ -62,6 +62,15 @@ header{
   display:flex;flex-wrap:wrap;gap:14px 32px;align-items:flex-end;justify-content:space-between;
   padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:20px;
 }
+.title-wrap{position:relative;display:inline-block;}
+.title-wrap > *{position:relative;}
+.pulse{position:absolute !important;left:-16px;right:-40px;top:-10px;height:calc(100% + 20px);width:auto;pointer-events:none;overflow:visible;z-index:0;opacity:.7;}
+.pulse-line{fill:none;stroke:var(--accent);stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke;}
+@media (prefers-reduced-motion:no-preference){
+  .pulse-track{animation:pulseMove 11s linear infinite;}
+  @keyframes pulseMove{from{transform:translateX(-900px)}to{transform:translateX(0)}}
+  .pulse-line{stroke-dasharray:1 0;}
+}
 h1{
   font-family:'Barlow Condensed',Impact,sans-serif;font-weight:700;text-transform:uppercase;
   letter-spacing:.015em;font-size:clamp(30px,5vw,44px);margin:0;line-height:.92;text-wrap:balance;
@@ -495,7 +504,22 @@ tr.st.open .chev{transform:rotate(90deg);}
 <div class="wrap">
   <header>
     <div>
+      <div class="title-wrap">
+      <svg class="pulse" viewBox="0 0 900 120" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="pulseFade" x1="0" x2="1">
+            <stop offset="0" stop-color="var(--accent)" stop-opacity="0"/><stop offset=".18" stop-color="var(--accent)" stop-opacity=".55"/>
+            <stop offset=".82" stop-color="var(--accent)" stop-opacity=".55"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/>
+          </linearGradient>
+          <mask id="pulseMask"><rect width="900" height="120" fill="url(#pulseFade)"/></mask>
+        </defs>
+        <g mask="url(#pulseMask)"><g class="pulse-track">
+          <path class="pulse-line" d="M0,80 H70 L82,72 L94,80 H150 L162,18 L174,112 L186,80 H260 L272,74 L284,80 H360 L372,40 L384,104 L396,80 H470 L486,70 L500,80 H560 L572,26 L584,110 L596,80 H660 L672,74 L684,80 H760 L772,44 L784,102 L796,80 H900
+            H970 L982,72 L994,80 H1050 L1062,18 L1074,112 L1086,80 H1160 L1172,74 L1184,80 H1260 L1272,40 L1284,104 L1296,80 H1370 L1386,70 L1400,80 H1460 L1472,26 L1484,110 L1496,80 H1560 L1572,74 L1584,80 H1660 L1672,44 L1684,102 L1696,80 H1800"/>
+        </g></g>
+      </svg>
       <h1>Roblox Radar</h1>
+      </div>
       <div class="sub" data-i18n="subtitle"></div>
     </div>
     <div class="header-right">
