@@ -19,6 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 GAMES = ROOT / "data" / "games.json"
 HISTORY = ROOT / "data" / "history.json"
+TRENDS = ROOT / "data" / "trends.json"   # small per-game 24h/7d/30d changes for the Discord bot
 
 BATCH = 50
 PAUSE = 1.0
@@ -106,6 +107,37 @@ def compact_history(history):
     print(f"  history compacted: {len(collapsible)} old days collapsed, {len(new_times)} readings kept", flush=True)
 
 
+def same_hour_reading(times_s, days):
+    """Index of the reading closest to `days` ago at a similar time of day (+/-3h), or None."""
+    last = times_s[-1]
+    target, min_back = last - days * 86400, last - days * 86400 * 0.7
+    best = None
+    for i, ts in enumerate(times_s):
+        if ts > min_back:
+            break
+        d = abs((ts % 86400) - (last % 86400))
+        if min(d, 86400 - d) > 3 * 3600:
+            continue
+        if best is None or abs(ts - target) < abs(times_s[best] - target):
+            best = i
+    return best
+
+
+def write_trends(history, stamp):
+    times_s = [datetime.fromisoformat(x.replace("Z", "+00:00")).timestamp() for x in history["times"]]
+    refs = [same_hour_reading(times_s, d) for d in (1, 7, 30)]
+    out = {}
+    for gid, s in history["series"].items():
+        cur = s[-1] if len(s) == len(times_s) else None
+        row = []
+        for r in refs:
+            prev = s[r] if r is not None and r < len(s) else None
+            row.append(round((cur - prev) / prev * 100, 1) if cur is not None and prev else None)
+        if any(v is not None for v in row):
+            out[gid] = row
+    TRENDS.write_text(json.dumps({"generated": stamp, "t": out}, separators=(",", ":")), encoding="utf-8")
+
+
 def main():
     light = "--light" in sys.argv
     games_doc = json.loads(GAMES.read_text(encoding="utf-8"))
@@ -180,6 +212,7 @@ def main():
         print("light run: players/visits only", flush=True)
 
     compact_history(history)
+    write_trends(history, stamp)
     games_doc["generated"] = stamp
     GAMES.write_text(json.dumps(games_doc, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     HISTORY.write_text(json.dumps(history, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

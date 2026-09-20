@@ -3,3 +3,4 @@ scripts/
 .github/
 .claude/
 README.md
+worker/
