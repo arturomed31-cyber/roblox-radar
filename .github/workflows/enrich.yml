@@ -2,7 +2,7 @@ name: Business data (groups, passes, social links)
 
 on:
   schedule:
-    - cron: "30 21 * * *"   # 21:30 UTC, after the daily refresh
+    - cron: "40 21 * * *"   # 21:30 UTC, after the daily refresh
   workflow_dispatch:
     inputs:
       max_age:

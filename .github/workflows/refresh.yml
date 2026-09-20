@@ -1,8 +1,8 @@
-name: Player readings (every 2h)
+name: Player readings (hourly)
 
 on:
   schedule:
-    - cron: "0 */2 * * *"
+    - cron: "7 * * * *"   # off the hour: GitHub delays or drops on-the-hour schedules when busy
   workflow_dispatch:
 
 permissions:

@@ -2,7 +2,7 @@ name: Daily refresh
 
 on:
   schedule:
-    - cron: "0 20 * * *"   # 20:00 UTC = 4:00 pm Caracas, Roblox peak hours
+    - cron: "20 20 * * *"   # 20:00 UTC = 4:00 pm Caracas, Roblox peak hours
   workflow_dispatch:
     inputs:
       min_players:
