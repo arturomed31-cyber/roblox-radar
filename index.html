@@ -505,7 +505,7 @@ tr.st.open .chev{transform:rotate(90deg);}
 .ticker{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:9px;background:var(--panel);margin:-6px 0 16px;height:34px;
   mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);}
 .ticker[hidden]{display:none;}
-.ticker-track{display:flex;gap:0;white-space:nowrap;width:max-content;height:100%;align-items:center;}
+.ticker-track{display:flex;gap:0;white-space:nowrap;width:max-content;height:100%;align-items:center;will-change:transform;}
 .tk{display:inline-flex;align-items:center;gap:7px;padding:0 18px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-dim);border-right:1px solid var(--border);height:100%;cursor:pointer;}
 .tk:hover{background:var(--panel-2);color:var(--text);}
 .tk .nm{color:var(--text);font-weight:600;font-family:'Public Sans',system-ui,sans-serif;max-width:190px;overflow:hidden;text-overflow:ellipsis;}
@@ -514,9 +514,6 @@ tr.st.open .chev{transform:rotate(90deg);}
 .tk .ch.up{color:var(--good);} .tk .ch.down{color:var(--risk);} .tk .ch.flat{color:var(--text-faint);}
 .tk .live{width:6px;height:6px;border-radius:50%;background:var(--good);}
 @media (prefers-reduced-motion:no-preference){
-  .ticker-track{animation:tickerMove var(--tk-dur,90s) linear infinite;}
-  .ticker:hover .ticker-track{animation-play-state:paused;}
-  @keyframes tickerMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
   .tk .v.bump{animation:bump .5s ease-out;}
   @keyframes bump{from{color:var(--good)}to{color:inherit}}
 }
@@ -2087,8 +2084,27 @@ function buildTicker(){
   };
   const html = rows.map(item).join('');
   track.innerHTML = html + html;   // duplicated for a seamless loop
-  el.style.setProperty('--tk-dur', Math.round(rows.length * 3.2) + 's');
   el.hidden = false;
+  tickerRun();
+}
+// JS-driven scroll so hovering eases to a stop and back instead of freezing
+const TK = {x: 0, v: 0, target: 40, raf: 0, last: 0};   // px per second
+function tickerRun(){
+  const el = document.getElementById('ticker'), track = document.getElementById('tickerTrack');
+  if(TK.raf || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  el.addEventListener('mouseenter', () => { TK.target = 0; });
+  el.addEventListener('mouseleave', () => { TK.target = 40; });
+  el.addEventListener('touchstart', () => { TK.target = TK.target ? 0 : 40; }, {passive: true});
+  const step = now => {
+    const dt = Math.min(0.05, (now - (TK.last || now)) / 1000); TK.last = now;
+    TK.v += (TK.target - TK.v) * Math.min(1, dt * 4);          // ease toward the target speed
+    TK.x -= TK.v * dt;
+    const half = track.scrollWidth / 2;
+    if(half && TK.x <= -half) TK.x += half;
+    track.style.transform = `translateX(${TK.x.toFixed(2)}px)`;
+    TK.raf = requestAnimationFrame(step);
+  };
+  TK.raf = requestAnimationFrame(step);
 }
 function tickerUpdate(g){
   document.querySelectorAll(`[data-tk="${g.id}"]`).forEach(v => {
