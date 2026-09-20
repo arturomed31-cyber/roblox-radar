@@ -320,11 +320,62 @@ footer .legal-links button:hover{color:var(--text);}
 
 footer{margin-top:20px;font-size:11.5px;color:var(--text-faint);font-family:'IBM Plex Mono',monospace;line-height:1.7;max-width:100ch;}
 
-@media (max-width:640px){
-  .game-name,.creator{max-width:140px;}
-  .tagset{max-width:150px;}
-  .table-scroll{max-height:none;}
+/* ---------- phones: the games table becomes a stack of cards ---------- */
+@media (max-width:700px){
+  .wrap{padding:0 2px;}
+  header{gap:10px 20px;margin-bottom:14px;padding-bottom:12px;}
+  .header-right{width:100%;justify-content:space-between;align-items:center;}
+  .scan-meta{text-align:left;font-size:11px;}
+  .sub{font-size:12.5px;}
+  .signals{grid-template-columns:repeat(auto-fit,minmax(104px,1fr));margin-bottom:14px;}
+  .signal{padding:9px 10px;}
+  .signal .n{font-size:20px;}
+  .controls{padding:9px 10px;gap:8px;}
+  #search,#stSearch{flex:1 1 100%;}
+  .controls select{flex:1 1 44%;min-width:0;}
+  .clear-btn{flex:1 1 100%;}
+  .view-switch{width:100%;overflow-x:auto;}
+  .view-switch button{flex:1;padding:7px 8px;font-size:12px;white-space:nowrap;}
+  .share-row{flex-wrap:wrap;}
+  .share-btn{width:100%;}
+  .table-scroll{max-height:none;overflow:visible;}
+  .table-scroll table{min-width:0;}
+  .table-scroll thead{display:none;}
+  .table-scroll tbody{display:block;}
+  .table-scroll tbody tr{display:flex;flex-wrap:wrap;gap:6px 6px;align-items:center;padding:10px 12px;}
+  .table-scroll tbody tr:hover{background:transparent;}
+  .table-scroll td{padding:0;font-size:12.5px;}
+  .table-scroll td:has(.game-cell){flex:1 1 100%;margin-bottom:2px;}
+  .table-scroll td:has(.cmp-check){flex:0 0 auto;order:-1;margin-right:4px;}
+  .table-scroll td:has(.tagset){flex:1 1 40%;}   /* metrics start on their own line */
+  .table-scroll td[data-l]{display:inline-block;padding:4px 8px;background:var(--panel-2);border:1px solid var(--border);border-radius:6px;text-align:left;font-size:12.5px;}
+  .table-scroll td[data-l]::before{content:attr(data-l);display:block;font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);margin-bottom:1px;}
+  .table-scroll td[colspan]{flex:1 1 100%;}
+  .game-name,.creator{max-width:100%;white-space:normal;}
+  .game-name{font-size:14px;line-height:1.25;}
+  .tagset{max-width:100%;}
+  .overlay{padding:0;align-items:stretch;}
+  .modal{border-radius:0;border:none;min-height:100%;}
+  .modal-body{padding:12px 13px 20px;}
   .modal-title{font-size:22px;}
+  .stat-grid{grid-template-columns:repeat(auto-fit,minmax(118px,1fr));}
+  .stat .v{font-size:15px;}
+  .score-parts{grid-template-columns:1fr;}
+  .chart-box{padding:10px 8px 6px;}
+  .chart-stats{gap:8px 14px;}
+  .note-form{flex-wrap:wrap;}
+  .note-form input{width:100%;max-width:100%;}
+  .links-row .link-btn{flex:1 1 45%;justify-content:center;}
+  .settings,.legal{max-width:100%;}
+  .cmp-box{padding:10px 10px;}
+  .cmp-legend{font-size:10.5px;}
+  .cmp-table th,.cmp-table td{padding:5px 6px;font-size:12px;}
+  .watch-tools .share-btn{width:auto;flex:1 1 45%;}
+  footer{font-size:11px;}
+}
+@media (max-width:420px){
+  .signals{grid-template-columns:repeat(3,1fr);}
+  .signal .lbl{font-size:10.5px;}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none !important;}}
 .thumb-btn img{width:100%;height:100%;object-fit:cover;display:block;}
@@ -860,6 +911,9 @@ function applyFilters(){
 }
 
 function cellHtml(g, c){
+  return cellRaw(g, c).replace('<td', `<td data-l="${esc(t(c.h))}"`);
+}
+function cellRaw(g, c){
   switch(c.k){
     case 'score': return `<td class="num"><span class="score-pill ${scoreClass(g.score)}">${g.score}</span></td>`;
     case 'd1': return `<td class="num">${deltaHtml(g.d1)}</td>`;
