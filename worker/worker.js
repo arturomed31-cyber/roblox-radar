@@ -13,6 +13,10 @@
  *   ADMIN_KEY            any long random string you choose, protects /register
  *   SITE (optional)      defaults to https://roblox-radar.pages.dev
  *   LANG (optional)      "es" (default) or "en" for the bot's replies
+ *   GITHUB_TOKEN         (optional) fine-grained token with Actions: write on the repo — lets the
+ *                        Worker's Cron Trigger start the hourly reading, since GitHub's own
+ *                        schedule skips runs. Add a trigger "7 * * * *" under Settings → Triggers.
+ *   GITHUB_REPO          (optional) "owner/repo", default arturomed31-cyber/roblox-radar
  */
 
 const DEFAULT_SITE = 'https://roblox-radar.pages.dev';
@@ -23,6 +27,17 @@ const ALLOWED_ORIGINS = [
 const UA = 'roblox-radar-worker/1.0';
 
 export default {
+  // Cron Trigger: kick the hourly reading on GitHub (reliable, unlike GitHub's own schedule)
+  async scheduled(event, env, ctx) {
+    if (!env.GITHUB_TOKEN) return;
+    const repo = env.GITHUB_REPO || 'arturomed31-cyber/roblox-radar';
+    ctx.waitUntil(fetch(`https://api.github.com/repos/${repo}/actions/workflows/refresh.yml/dispatches`, {
+      method: 'POST',
+      headers: { 'authorization': `Bearer ${env.GITHUB_TOKEN}`, 'accept': 'application/vnd.github+json', 'user-agent': UA, 'content-type': 'application/json' },
+      body: JSON.stringify({ ref: 'main' })
+    }));
+  },
+
   async fetch(req, env) {
     const url = new URL(req.url);
     try {
