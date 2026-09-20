@@ -524,6 +524,9 @@ tr.st.open .chev{transform:rotate(90deg);}
   .tk .v.bump{animation:bump .5s ease-out;}
   @keyframes bump{from{color:var(--good)}to{color:inherit}}
 }
+
+.nobuy-badge{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:700;letter-spacing:.06em;padding:1px 6px;border-radius:4px;background:color-mix(in srgb,var(--risk) 18%,transparent);color:var(--risk);border:1px solid color-mix(in srgb,var(--risk) 45%,transparent);vertical-align:1px;}
+.nobuy-badge.big{font-size:11px;padding:3px 9px;margin-right:6px;}
 </style>
 </head>
 <body>
@@ -584,6 +587,7 @@ tr.st.open .chev{transform:rotate(90deg);}
       <select id="ageSelect" aria-label="Filter by age"></select>
       <select id="trendSelect" aria-label="Filter by trend"></select>
       <select id="ownerSelect" aria-label="Filter by owner"></select>
+      <select id="nobuySelect" aria-label="Not-to-buy filter"></select>
       <select id="sortSelect" aria-label="Sort games"></select>
       <button class="clear-btn" id="clearBtn" type="button" data-i18n="reset"></button>
     </div>
@@ -756,7 +760,40 @@ let DATA = null, GAMES = [], SAMPLE_TIMES = [], SAMPLE_MS = [];
 /* ---------- i18n ---------- */
 /* I18N dictionaries live in i18n.js */
 function t(key){ const d = I18N[settings.lang] || I18N.en; return d[key] ?? I18N.en[key] ?? key; }
-const TAG_CLS = {'brainrot':'warn','mm2-clone':'risk','mm2-original':'good','minecraft-clone':'risk','tower':'info','tower-defense':'info','steal-pattern':'warn','plus1-pattern':'warn','duels-pattern':'warn','rng-gacha':'info','copycat':'risk','licensed-ip':'risk','flagship':'good','anime':'info','meme':'warn'};
+const TAG_CLS = {'brainrot':'warn','mm2-clone':'risk','mm2-original':'good','minecraft-clone':'risk','tower':'info','tower-defense':'info','steal-pattern':'warn','plus1-pattern':'warn','duels-pattern':'warn','rng-gacha':'info','copycat':'risk','licensed-ip':'risk','flagship':'good','anime':'info','meme':'warn','modded':'risk','hood-rp':'risk','donation':'risk','incremental':'risk','hangout':'risk','troll-tower':'risk'};
+// the buyer's "not to buy" list: any of these tags, or the roleplay category
+const NOBUY_TAGS = ['modded','hood-rp','minecraft-clone','troll-tower','brainrot','donation','incremental','hangout','mm2-clone','mm2-original'];
+const isNoBuy = g => g.cat === 'rp' || g.tags.some(x => NOBUY_TAGS.includes(x));
+const NOBUY_I18N = {
+  en:{badge:'NOT TO BUY', sel:{'':'Not-to-buy: show all', hide:'Hide not-to-buy', only:'Only not-to-buy'}, sc:'On the not-to-buy list', sig:'Not to buy',
+      why:'On the not-to-buy list: modded, roleplay, Minecraft copies, troll towers, hood RP, brainrot, donation, incremental, hangout and MM2 games.'},
+  es:{badge:'NO COMPRAR', sel:{'':'No comprar: mostrar todos', hide:'Ocultar "no comprar"', only:'Solo "no comprar"'}, sc:'En la lista de no comprar', sig:'No comprar',
+      why:'En la lista de no comprar: modded, roleplay, copias de Minecraft, troll towers, hood RP, brainrot, donaciones, incrementales, hangout y juegos MM2.'},
+  pt:{badge:'NÃO COMPRAR', sel:{'':'Não comprar: mostrar todos', hide:'Ocultar "não comprar"', only:'Só "não comprar"'}, sc:'Na lista de não comprar', sig:'Não comprar',
+      why:'Na lista de não comprar: modded, roleplay, cópias de Minecraft, troll towers, hood RP, brainrot, doações, incrementais, hangout e jogos MM2.'},
+  fr:{badge:'NE PAS ACHETER', sel:{'':'À éviter : tout afficher', hide:'Masquer « à éviter »', only:'Seulement « à éviter »'}, sc:'Sur la liste à éviter', sig:'À éviter',
+      why:'Sur la liste à éviter : modded, roleplay, copies de Minecraft, troll towers, hood RP, brainrot, dons, incrémentaux, hangout et jeux MM2.'},
+  de:{badge:'NICHT KAUFEN', sel:{'':'Nicht kaufen: alle zeigen', hide:'„Nicht kaufen“ ausblenden', only:'Nur „Nicht kaufen“'}, sc:'Auf der Nicht-kaufen-Liste', sig:'Nicht kaufen',
+      why:'Auf der Nicht-kaufen-Liste: Modded, Roleplay, Minecraft-Kopien, Troll Towers, Hood-RP, Brainrot, Spenden, Incremental, Hangout und MM2-Spiele.'},
+  it:{badge:'NON COMPRARE', sel:{'':'Non comprare: mostra tutti', hide:'Nascondi "non comprare"', only:'Solo "non comprare"'}, sc:'Nella lista da non comprare', sig:'Non comprare',
+      why:'Nella lista da non comprare: modded, roleplay, copie di Minecraft, troll tower, hood RP, brainrot, donazioni, incrementali, hangout e giochi MM2.'},
+  ru:{badge:'НЕ ПОКУПАТЬ', sel:{'':'Не покупать: показать все', hide:'Скрыть «не покупать»', only:'Только «не покупать»'}, sc:'В списке «не покупать»', sig:'Не покупать',
+      why:'В списке «не покупать»: modded, ролевые, копии Minecraft, troll tower, hood RP, brainrot, донаты, incremental, hangout и игры MM2.'},
+  ja:{badge:'購入非推奨', sel:{'':'購入非推奨：すべて表示', hide:'購入非推奨を隠す', only:'購入非推奨のみ'}, sc:'購入非推奨リスト', sig:'購入非推奨',
+      why:'購入非推奨リスト：modded、ロールプレイ、Minecraftコピー、troll tower、hood RP、brainrot、寄付、インクリメンタル、hangout、MM2系。'}
+};
+const tn = k => (NOBUY_I18N[settings.lang] || NOBUY_I18N.en)[k];
+const EXTRA_TAGS = {
+  en:{modded:'Modded', 'hood-rp':'Hood roleplay', donation:'Donation game', incremental:'Incremental / idle', hangout:'Hangout', 'troll-tower':'Troll tower'},
+  es:{modded:'Modded', 'hood-rp':'Hood roleplay', donation:'Juego de donaciones', incremental:'Incremental / idle', hangout:'Hangout', 'troll-tower':'Troll tower'},
+  pt:{modded:'Modded', 'hood-rp':'Hood roleplay', donation:'Jogo de doações', incremental:'Incremental / idle', hangout:'Hangout', 'troll-tower':'Troll tower'},
+  fr:{modded:'Modded', 'hood-rp':'Hood roleplay', donation:'Jeu de dons', incremental:'Incrémental / idle', hangout:'Hangout', 'troll-tower':'Troll tower'},
+  de:{modded:'Modded', 'hood-rp':'Hood-Roleplay', donation:'Spendenspiel', incremental:'Incremental / Idle', hangout:'Hangout', 'troll-tower':'Troll Tower'},
+  it:{modded:'Modded', 'hood-rp':'Hood roleplay', donation:'Gioco di donazioni', incremental:'Incrementale / idle', hangout:'Hangout', 'troll-tower':'Troll tower'},
+  ru:{modded:'Modded', 'hood-rp':'Hood-ролевая', donation:'Донат-игра', incremental:'Incremental / idle', hangout:'Hangout', 'troll-tower':'Troll tower'},
+  ja:{modded:'Modded', 'hood-rp':'Hood ロールプレイ', donation:'寄付ゲーム', incremental:'インクリメンタル / 放置', hangout:'たまり場', 'troll-tower':'トロールタワー'}
+};
+Object.keys(EXTRA_TAGS).forEach(l => { if(I18N[l] && I18N[l].tags) Object.assign(I18N[l].tags, EXTRA_TAGS[l]); });
 const SIGNAL_DEFS = [
   {key:'brainrot',tone:'warn'},{key:'mm2-clone',tone:'risk'},{key:'minecraft-clone',tone:'risk'},{key:'tower',tone:'info'},
   {key:'steal-pattern',tone:'warn'},{key:'plus1-pattern',tone:'warn'},{key:'duels-pattern',tone:'warn'},
@@ -789,20 +826,20 @@ function applyTheme(){
 }
 applyTheme();
 
-const defaultState = () => ({search:'', cat:'', age:'', trend:'', owner:'', tags:new Set(), sort:'playing_desc', shown:PAGE});
+const defaultState = () => ({search:'', cat:'', age:'', trend:'', owner:'', nobuy:'', tags:new Set(), sort:'playing_desc', shown:PAGE});
 let state = defaultState();
 let view = 'games', marketBy = 'tags';
 
 function saveFilters(){
   if(!settings.rememberFilters) return;
-  try { localStorage.setItem(FILTERS_KEY, JSON.stringify({search:state.search, cat:state.cat, age:state.age, trend:state.trend, owner:state.owner, tags:[...state.tags], sort:state.sort})); } catch (e) {}
+  try { localStorage.setItem(FILTERS_KEY, JSON.stringify({search:state.search, cat:state.cat, age:state.age, trend:state.trend, owner:state.owner, nobuy:state.nobuy, tags:[...state.tags], sort:state.sort})); } catch (e) {}
 }
 function loadFilters(){
   if(!settings.rememberFilters) return;
   try {
     const f = JSON.parse(localStorage.getItem(FILTERS_KEY) || 'null');
     if(!f) return;
-    state.search = f.search || ''; state.cat = f.cat || ''; state.age = f.age || ''; state.trend = f.trend || ''; state.owner = f.owner || '';
+    state.search = f.search || ''; state.cat = f.cat || ''; state.age = f.age || ''; state.trend = f.trend || ''; state.owner = f.owner || ''; state.nobuy = f.nobuy || '';
     state.tags = new Set(f.tags || []); state.sort = f.sort || 'playing_desc';
   } catch (e) {}
 }
@@ -870,6 +907,7 @@ function computeMetrics(){
     if(g.tags.includes('licensed-ip')) { parts.push(['sc_ip', -12, 0, false]); adj -= 12; }
     if(g.tags.some(x => SATURATED.includes(x))) { parts.push(['sc_pattern', -8, 0, false]); adj -= 8; }
     if(g.src !== 'review') { parts.push(['sc_auto', -3, 0, false]); adj -= 3; }
+    if(isNoBuy(g)) { parts.push(['sc_nobuy', -20, 0, false]); adj -= 20; }
     const base = parts.filter(p => p[2] > 0).reduce((a,p) => a + p[1], 0);
     g.score = Math.max(0, Math.min(100, base + adj));
     g.scoreParts = parts;
@@ -962,6 +1000,9 @@ function applyLanguage(){
   const trend = document.getElementById('trendSelect');
   trend.innerHTML = TREND_OPTS.map(([v,k]) => `<option value="${v}">${t(k)}</option>`).join('');
   trend.value = state.trend;
+  const nb = document.getElementById('nobuySelect');
+  nb.innerHTML = Object.entries(tn('sel')).map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+  nb.value = state.nobuy;
   document.getElementById('search').value = state.search;
 
   buildCatSelect();
@@ -1034,6 +1075,8 @@ function applyFilters(){
   if(state.tags.size) rows = rows.filter(g => [...state.tags].every(x => g.tags.includes(x)));
   if(state.trend) rows = rows.filter(g => g.trend === state.trend);
   if(state.owner) rows = rows.filter(g => g.cType === state.owner);
+  if(state.nobuy === 'hide') rows = rows.filter(g => !isNoBuy(g));
+  if(state.nobuy === 'only') rows = rows.filter(isNoBuy);
   if(settings.hideAuto) rows = rows.filter(g => g.src === 'review');
   const [field, dir] = state.sort.split('_');
   return [...rows].sort((a,b) => {
@@ -1078,7 +1121,7 @@ function rowHtml(g){
       <button class="thumb-btn" data-open="${g._i}" title="${esc(t('openStats')(g.name))}" aria-label="${esc(t('openStats')(g.name))}">${imgHtml(g, 44)}</button>
       <div class="game-text">
         <button class="game-name" data-open="${g._i}">${esc(g.name)}</button>
-        <span class="creator">${t('by')} ${esc(g.creator || t('unknown'))}${g.verified ? ' ✓' : ''} ${trendBadge(g.trend)}</span>
+        <span class="creator">${t('by')} ${esc(g.creator || t('unknown'))}${g.verified ? ' ✓' : ''} ${trendBadge(g.trend)}${isNoBuy(g) ? ` <span class="nobuy-badge" title="${esc(tn('why'))}">🚫 ${tn('badge')}</span>` : ''}</span>
       </div>
     </div></td>
     <td><span class="cat-pill" title="${reviewed ? t('reviewed') : t('autoTip')}">${catLabel(g.cat)}${reviewed ? '' : ` <span class="auto">${t('auto')}</span>`}</span></td>
@@ -1094,7 +1137,8 @@ function render(){
   saveFilters();
   syncUrl();
   document.getElementById('shareView').textContent = ts('share');
-  document.querySelectorAll('.signal, .chip[data-tag]').forEach(n => {
+  const sb = document.getElementById('sigNoBuy'); if(sb){ sb.classList.toggle('active', state.nobuy === 'only'); sb.setAttribute('aria-pressed', String(state.nobuy === 'only')); }
+  document.querySelectorAll('.signal[data-tag], .chip[data-tag]').forEach(n => {
     const on = state.tags.has(n.dataset.tag);
     n.classList.toggle(n.classList.contains('signal') ? 'active' : 'on', on);
     n.setAttribute('aria-pressed', String(on));
@@ -1498,7 +1542,7 @@ function openModal(idx, rangeKey){
     <div class="modal-body">
       <h2 class="modal-title" id="modalTitle">${esc(g.name)}</h2>
       <div class="modal-creator">${t('by')} ${esc(g.creator || t('unknown'))}${g.verified ? ' ✓' : ''} · ${esc(g.genre || '')} · ${t('classifiedAs')} ${catLabel(g.cat)}${g.src === 'review' ? '' : ' ' + t('autoNote')}${g.added ? ` · ${t('added')} ${esc(g.added)}` : ''}</div>
-      <div class="modal-tags">${g.tags.length ? g.tags.map(tagHtml).join('') : `<span class="tag none">${t('noTag')}</span>`}</div>
+      <div class="modal-tags">${isNoBuy(g) ? `<span class="nobuy-badge big" title="${esc(tn('why'))}">🚫 ${tn('badge')}</span>` : ''}${g.tags.length ? g.tags.map(tagHtml).join('') : `<span class="tag none">${t('noTag')}</span>`}</div>
       <div class="stat-grid">${stats.map(([k,v,key]) => `<div class="stat" ${key ? `data-k="${key}"` : ''}><div class="v">${v}</div><div class="k">${k}</div></div>`).join('')}</div>
 
       <div class="score-box live-box" id="liveBox"></div>
@@ -1514,7 +1558,7 @@ function openModal(idx, rangeKey){
           <div>${t('st_d30')} <b>${deltaHtml(g.d30)}</b></div>
         </div>
         <div class="score-parts">
-          ${g.scoreParts.map(([k, pts, max, na]) => `<div class="score-part"><span>${t(k)}${na ? ' *' : ''}</span><b class="${pts < 0 ? 'neg' : max === 0 && pts > 0 ? 'pos' : ''}">${pts > 0 && max === 0 ? '+' : ''}${pts}${max ? ' / ' + max : ''}</b></div>`).join('')}
+          ${g.scoreParts.map(([k, pts, max, na]) => `<div class="score-part"><span>${k === 'sc_nobuy' ? tn('sc') : t(k)}${na ? ' *' : ''}</span><b class="${pts < 0 ? 'neg' : max === 0 && pts > 0 ? 'pos' : ''}">${pts > 0 && max === 0 ? '+' : ''}${pts}${max ? ' / ' + max : ''}</b></div>`).join('')}
         </div>
         ${g.scoreParts.some(p => p[3]) ? `<div class="hint" style="margin-top:8px;font-size:11px;color:var(--text-faint)">* ${t('sc_noHist')}</div>` : ''}
       </div>
@@ -1602,8 +1646,9 @@ function buildSignals(){
   el.innerHTML = SIGNAL_DEFS.map(s => {
     const n = GAMES.filter(g => g.tags.includes(s.key)).length;
     return `<button type="button" class="signal ${s.tone}" data-tag="${s.key}" aria-pressed="false"><div class="n" data-n="${n}">${n}</div><div class="lbl">${t('signals')[s.key]}</div></button>`;
-  }).join('');
-  el.querySelectorAll('.signal').forEach(n => n.addEventListener('click', () => toggleTag(n.dataset.tag)));
+  }).join('') + `<button type="button" class="signal risk" id="sigNoBuy" title="${esc(tn('why'))}" aria-pressed="false"><div class="n" data-n="${GAMES.filter(isNoBuy).length}">${GAMES.filter(isNoBuy).length}</div><div class="lbl">🚫 ${tn('sig')}</div></button>`;
+  el.querySelectorAll('.signal[data-tag]').forEach(n => n.addEventListener('click', () => toggleTag(n.dataset.tag)));
+  document.getElementById('sigNoBuy').addEventListener('click', () => { state.nobuy = state.nobuy === 'only' ? '' : 'only'; document.getElementById('nobuySelect').value = state.nobuy; state.shown = PAGE; render(); });
   if(!buildSignals.done){ buildSignals.done = true; countUp(el.querySelectorAll('.n[data-n]')); }
 }
 function buildCatSelect(){
@@ -1627,6 +1672,7 @@ document.getElementById('catSelect').addEventListener('change', e => { state.cat
 document.getElementById('ageSelect').addEventListener('change', e => { state.age = e.target.value; state.shown = PAGE; render(); });
 document.getElementById('trendSelect').addEventListener('change', e => { state.trend = e.target.value; state.shown = PAGE; render(); });
 document.getElementById('ownerSelect').addEventListener('change', e => { state.owner = e.target.value; state.shown = PAGE; render(); });
+document.getElementById('nobuySelect').addEventListener('change', e => { state.nobuy = e.target.value; state.shown = PAGE; render(); });
 document.getElementById('sortSelect').addEventListener('change', e => { if(e.target.value){ state.sort = e.target.value; state.shown = PAGE; render(); } });
 document.getElementById('moreBtn').addEventListener('click', () => { state.shown += PAGE; render(); });
 document.getElementById('clearBtn').addEventListener('click', () => {
@@ -1636,6 +1682,7 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   document.getElementById('ageSelect').value = '';
   document.getElementById('trendSelect').value = '';
   document.getElementById('ownerSelect').value = '';
+  document.getElementById('nobuySelect').value = '';
   document.getElementById('sortSelect').value = 'playing_desc';
   render();
 });
@@ -2423,6 +2470,7 @@ function buildUrl(gameId){
   if(state.age) q.set('age', state.age);
   if(state.trend) q.set('trend', state.trend);
   if(state.owner) q.set('owner', state.owner);
+  if(state.nobuy) q.set('nobuy', state.nobuy);
   if(state.tags.size) q.set('tags', [...state.tags].join(','));
   if(state.sort !== 'playing_desc') q.set('sort', state.sort);
   if(view === 'market') q.set('view', 'market');
@@ -2452,7 +2500,7 @@ function applyUrlState(){
   const q = new URLSearchParams(location.search);
   if(!q.toString()) return null;
   state.search = q.get('q') || ''; state.cat = q.get('cat') || ''; state.age = q.get('age') || '';
-  state.trend = q.get('trend') || ''; state.owner = q.get('owner') || '';
+  state.trend = q.get('trend') || ''; state.owner = q.get('owner') || ''; state.nobuy = q.get('nobuy') || '';
   state.tags = new Set((q.get('tags') || '').split(',').filter(Boolean));
   if(q.get('sort')) state.sort = q.get('sort');
   if(q.get('view') === 'market') view = 'market';

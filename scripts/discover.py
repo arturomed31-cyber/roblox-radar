@@ -216,6 +216,16 @@ def classify(name, desc, genre_l1):
     if re.search(r"fan[- ]?game|fan[- ]made|tribute to|based on the (anime|manga|series|game|show|movie)|inspired by (the )?(anime|manga|game|show|movie|series)|remake of|recreation of|clone of", d):
         tags.add("copycat")
     if "tower-defense" in tags: tags.discard("tower")
+    # the buyer's "not to buy" families
+    if re.search(r"\bmodded\b|\bmods?\b(?! ?menu)|admin commands|\badmin\b.*\b(free|abuse)", n) or re.search(r"\bmodded\b", d): tags.add("modded")
+    if re.search(r"\bhood\b|da hood|the streets\b|south bronx|\bghetto\b|\btrenches\b", n) or (cat in ("rp", "action") and re.search(r"\bhood\b|da hood|south bronx|\bghetto\b", d)):
+        tags.add("hood-rp")
+    if re.search(r"\bdonat(e|ion|ions)\b|pls donate|please donate|\btip\b.*\brobux|\bbeg\b", n) or re.search(r"donate robux|donation game|receive donations|get donations|tip other players", d):
+        tags.add("donation")
+    if re.search(r"\bincremental\b|\bidle\b|\bclicker\b|\bincremen", n) or re.search(r"incremental game|idle game|clicker game", d): tags.add("incremental")
+    if re.search(r"hang ?out|\bchill\b|\bvibe\b|\bvibes\b|chat ?room|\bcafe\b.*\bhangout|\blounge\b", n) or re.search(r"hangout game|a place to hang ?out|chill and chat|social hangout|hang out with friends and chat", d):
+        tags.add("hangout")
+    if re.search(r"\btroll\b.*\btower\b|\btower\b.*\btroll\b|troll obby|troll ragdoll", n): tags.add("troll-tower")
     return cat, sorted(tags)
 
 
