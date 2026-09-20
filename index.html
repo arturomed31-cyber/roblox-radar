@@ -215,6 +215,8 @@ td{padding:8px 12px;font-size:13px;vertical-align:middle;}
 .notes-head .tools button,.notes-head .tools label{font-family:inherit;font-size:11px;border-radius:6px;padding:4px 9px;border:1px solid var(--border);background:var(--panel);color:var(--text-dim);cursor:pointer;}
 .notes-head .tools button:hover,.notes-head .tools label:hover{color:var(--text);border-color:var(--text-faint);}
 .notes-hint{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-faint);margin-top:6px;}
+.note-item .gap{color:var(--warn);font-weight:600;margin-left:4px;}
+.marks-total b{color:var(--warn);}
 .chart-wrap svg{cursor:crosshair;}
 .marker{cursor:pointer;}
 .links-row{display:flex;flex-wrap:wrap;gap:8px;}
@@ -732,6 +734,14 @@ tr.st.open .chev{transform:rotate(90deg);}
         </div>
       </div>
 
+      <div class="setting">
+        <div class="lbl"><span id="sClockLbl"></span><span class="hint" id="sClockHint"></span></div>
+        <div class="seg" data-setting="clock">
+          <button type="button" data-v="24">24 h</button>
+          <button type="button" data-v="12">12 h</button>
+        </div>
+      </div>
+
       <div class="settings-foot">
         <span data-i18n="s_saved"></span>
         <button type="button" id="settingsReset" data-i18n="s_reset"></button>
@@ -760,7 +770,7 @@ const SETTINGS_KEY = 'radar.settings.v2';
 const FILTERS_KEY = 'radar.filters.v1';
 const DEFAULT_SETTINGS = {
   lang: (() => { const l = (navigator.language || 'en').toLowerCase().slice(0,2); return (I18N.LANGS || []).some(x => x.code === l) ? l : 'en'; })(),
-  theme:'system', numbers:'compact', rows:'150', hideAuto:false, tz:'local',
+  theme:'system', numbers:'compact', rows:'150', hideAuto:false, tz:'local', clock:'24',
   minPlayers:'0', rememberFilters:false,
   cols:{score:true, d7:true, d30:false, d1:false, rating:true, visits:true, age:true, favs:false, vpd:false, upd:false, rev:false, members:false, passes:false}
 };
@@ -938,6 +948,7 @@ function applyLanguage(){
   renderLangDd();
   renderDiscord();
   document.getElementById('methodBtn').textContent = tm('link');
+  { const c = (CLOCK_I18N[settings.lang] || CLOCK_I18N.en); document.getElementById('sClockLbl').textContent = c.lbl; document.getElementById('sClockHint').textContent = c.hint; }
 
   const age = document.getElementById('ageSelect');
   age.innerHTML = AGE_OPTS.map(([v,k]) => `<option value="${v}">${t(k)}</option>`).join('');
@@ -1173,10 +1184,22 @@ function dparts(ms){
     ? {h:d.getUTCHours(), m:d.getUTCMinutes(), mo:d.getUTCMonth(), day:d.getUTCDate()}
     : {h:d.getHours(), m:d.getMinutes(), mo:d.getMonth(), day:d.getDate()};
 }
+function fmtClock(h, m, sec){
+  const z = settings.tz === 'utc' ? 'Z' : '';
+  if(settings.clock === '12'){
+    const ap = h >= 12 ? 'pm' : 'am', h12 = h % 12 || 12;
+    return `${h12}:${pad2(m)}${sec != null ? ':' + pad2(sec) : ''} ${ap}${z}`;
+  }
+  return `${pad2(h)}:${pad2(m)}${sec != null ? ':' + pad2(sec) : ''}${z}`;
+}
 function fmtTime(ms, withDate){
   const p = dparts(ms);
-  const hm = `${pad2(p.h)}:${pad2(p.m)}${settings.tz === 'utc' ? 'Z' : ''}`;
+  const hm = fmtClock(p.h, p.m);
   return withDate ? `${t('months')[p.mo]} ${p.day} ${hm}` : hm;
+}
+function fmtDur(ms){   // elapsed time between two marks: "1d 4h 20m"
+  const m = Math.round(Math.abs(ms) / 60000), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), mm = m % 60;
+  return d ? `${d}d ${h}h` : h ? `${h}h ${mm}m` : `${mm}m`;
 }
 function fmtDateShort(ms){ const p = dparts(ms); return `${t('months')[p.mo]} ${p.day}`; }
 function niceStep(span, target){
@@ -1261,7 +1284,13 @@ function chartHtml(g, rangeKey){
     const last = pts[pts.length-1];
     const peakLabelX = Math.min(Math.max(x(peak.t), PL + 60), W - PR - 60);
     const notes = notesFor(g).filter(n => n.t >= t0 && n.t <= t1);
-    const markers = notes.map((n, i) => {
+    const markGaps = notes.slice(1).map((n, i) => {
+      const a = x(notes[i].t), b = x(n.t);
+      if(b - a < 44) return '';
+      return `<g pointer-events="none"><line x1="${(a+3).toFixed(1)}" y1="${H-PB-6}" x2="${(b-3).toFixed(1)}" y2="${H-PB-6}" stroke="var(--warn)" stroke-width="1" opacity=".7" marker-start="url(#arrL)" marker-end="url(#arrR)"/>
+        <text x="${((a+b)/2).toFixed(1)}" y="${H-PB-10}" text-anchor="middle" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="var(--warn)">${fmtDur(n.t - notes[i].t)}</text></g>`;
+    }).join('');
+    const markers = markGaps + notes.map((n, i) => {
       const nx = x(n.t), ly = PT + 22 + (i % 3) * 12;
       const label = n.text.length > 26 ? n.text.slice(0, 25) + '…' : n.text;
       const anchor = nx > W - 120 ? 'end' : 'start', dx = nx > W - 120 ? -5 : 5;
@@ -1273,6 +1302,8 @@ function chartHtml(g, rangeKey){
     }).join('');
     body = `<div class="chart-wrap" id="chartWrap">
       <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('ch_title')}" id="chartSvg">
+        <defs><marker id="arrL" viewBox="0 0 6 6" refX="1" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M6,0 L0,3 L6,6" fill="none" stroke="var(--warn)" stroke-width="1.2"/></marker>
+        <marker id="arrR" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--warn)" stroke-width="1.2"/></marker></defs>
         ${ygrid}${xgrid}
         <path class="chart-area" d="${area.trim()}" fill="color-mix(in srgb, var(--accent) 18%, transparent)" stroke="none"/>
         <path class="chart-line" pathLength="1" d="${line.trim()}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
@@ -1318,11 +1349,12 @@ function chartHtml(g, rangeKey){
       </div>
     </div>
     <div class="notes-list" id="notesList">
-      ${notesFor(g).length ? notesFor(g).map(n => `<div class="note-item" data-note="${n.id}">
-          <span class="when">${fmtTime(n.t, true)}</span><span class="txt">${esc(n.text)}</span>
+      ${notesFor(g).length ? notesFor(g).map((n, i, arr) => `<div class="note-item" data-note="${n.id}">
+          <span class="when">${fmtTime(n.t, true)}${i ? ` <span class="gap">+${fmtDur(n.t - arr[i-1].t)}</span>` : ''}</span><span class="txt">${esc(n.text)}</span>
           ${n.shared ? `<span class="shared">${t('n_shared')}</span>` : `<button type="button" data-edit="${n.id}">${t('n_edit')}</button><button type="button" data-del="${n.id}">${t('n_delete')}</button>`}
         </div>`).join('') : `<div class="notes-hint">${t('n_empty')}</div>`}
     </div>
+    ${notesFor(g).length >= 2 ? `<div class="notes-hint marks-total">${tc('total')}: <b>${fmtDur(notesFor(g)[notesFor(g).length-1].t - notesFor(g)[0].t)}</b></div>` : ''}
     <div class="notes-hint">${t('n_hint')}</div>`;
 }
 
@@ -1963,7 +1995,7 @@ const LIVE_I18N = {
   ja:{title:'ライブモード', hint:'選んだ間隔でこのゲームをRobloxから直接読み直します。タブを開いている間このブラウザで動作し、共有履歴には保存されません。', every:'間隔', for:'期間', start:'開始', stop:'停止', forever:'停止するまで', stopsAt:'終了予定', now:'現在', since:'開始時から', min:'最小', max:'最大', n:'回', last:'最終', err:'Robloxが応答しません。再試行中…', needs:'ライブモードにはデータ中継（Cloudflare Worker）が必要ですが、まだ設定されていません。', done:'終了'}
 };
 const tl = k => (LIVE_I18N[settings.lang] || LIVE_I18N.en)[k];
-const hhmmss = ms => { const d = new Date(ms); return settings.tz === 'utc' ? d.toISOString().slice(11, 19) + 'Z' : `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`; };
+const hhmmss = ms => { const d = new Date(ms); return settings.tz === 'utc' ? fmtClock(d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds()) : fmtClock(d.getHours(), d.getMinutes(), d.getSeconds()); };
 
 async function liveFetch(id){
   const r = await fetch(`${WORKER_URL.replace(/\/$/, '')}/live?ids=${id}`, {cache: 'no-store'});
@@ -2135,6 +2167,18 @@ function tickerUpdate(g){
 document.getElementById('tickerTrack').addEventListener('click', e => {
   const t = e.target.closest('[data-open]'); if(t) openModal(Number(t.dataset.open));
 });
+
+const CLOCK_I18N = {
+  en:{lbl:'Clock', hint:'24-hour (20:00) or 12-hour (8:00 pm) times', between:'between marks', total:'first to last mark'},
+  es:{lbl:'Reloj', hint:'Horas en formato 24 h (20:00) o 12 h (8:00 pm)', between:'entre marcas', total:'de la primera a la última marca'},
+  pt:{lbl:'Relógio', hint:'Horas em 24 h (20:00) ou 12 h (8:00 pm)', between:'entre marcas', total:'da primeira à última marca'},
+  fr:{lbl:'Horloge', hint:'Heures en 24 h (20:00) ou 12 h (8:00 pm)', between:'entre repères', total:'du premier au dernier repère'},
+  de:{lbl:'Uhrzeit', hint:'24-Stunden- (20:00) oder 12-Stunden-Format (8:00 pm)', between:'zwischen Marken', total:'erste bis letzte Marke'},
+  it:{lbl:'Orologio', hint:'Ore in formato 24 h (20:00) o 12 h (8:00 pm)', between:'tra i segni', total:'dal primo all’ultimo segno'},
+  ru:{lbl:'Часы', hint:'24-часовой (20:00) или 12-часовой (8:00 pm) формат', between:'между отметками', total:'от первой до последней отметки'},
+  ja:{lbl:'時刻表示', hint:'24時間制（20:00）または12時間制（8:00 pm）', between:'マーク間', total:'最初から最後のマークまで'}
+};
+const tc = k => (CLOCK_I18N[settings.lang] || CLOCK_I18N.en)[k];
 
 /* ---------- Discord invite ---------- */
 const DISCORD_INVITE = 'https://discord.gg/qCHUJu4RyJ';   // set to the server's permanent invite link, e.g. 'https://discord.gg/xxxx'
@@ -2482,7 +2526,7 @@ function applySetting(key, value){
   if(key === 'lang'){ applyLanguage(); syncSettingsUI(); return; }
   syncSettingsUI();
   if(GAMES.length) render();
-  if(key === 'tz' && !overlay.hidden && currentGame) renderChart(currentGame, currentRange);
+  if((key === 'tz' || key === 'clock') && !overlay.hidden && currentGame){ renderChart(currentGame, currentRange); renderLive(currentGame); }
 }
 function openSettings(){
   settingsReturnFocus = document.activeElement;
