@@ -286,31 +286,33 @@ async function discord(req, env) {
   const body = await req.text();
   if (!(await verifyDiscord(req, body, env.DISCORD_PUBLIC_KEY))) return new Response('bad signature', { status: 401 });
   const it = JSON.parse(body);
-  if (it.type === 1) return json({ type: 1 });                     // ping
-  if (it.type !== 2) return json({ type: 4, data: { content: '?' } });
+  if (it.type === 1) return json({ type: 1 });
+  // every reply is ephemeral: only the person who ran the command sees it
+  const reply = obj => { if (obj.type === 4) obj.data = { ...(obj.data || {}), flags: 64 }; return json(obj); };                     // ping
+  if (it.type !== 2) return reply({ type: 4, data: { content: '?' } });
   const L = T[(env.LANG || 'es').slice(0, 2)] || T.es;
   const site = (env.SITE || DEFAULT_SITE).replace(/\/$/, '');
   const name = it.data.name;
   const opt = k => ((it.data.options || []).find(o => o.name === k) || {}).value;
   const data = await siteData(env);
-  if (!data.games) return json({ type: 4, data: { content: 'data unavailable' } });
+  if (!data.games) return reply({ type: 4, data: { content: 'data unavailable' } });
   const trend = g => data.trends[String(g.id)] || [null, null, null];
   const line = (g, i) => `**${i + 1}.** [${g.name.slice(0, 48)}](${site}/?game=${g.id}) — ${fmt(g.playing)} · ${pct(trend(g)[0])} (${L.h24})`;
   const footer = { text: `Roblox Radar · ${site.replace(/^https?:\/\//, '')}` };
   const embed = (title, lines) => ({ type: 4, data: { embeds: [{ title, description: lines.length ? lines.join('\n') : L.none, color: 0x4fd1c5, footer }] } });
 
-  if (name === 'help') return json({ type: 4, data: { content: L.help + site } });
+  if (name === 'help') return reply({ type: 4, data: { content: L.help + site } });
 
   if (name === 'watch') {
-    if (!env.RADAR_KV) return json({ type: 4, data: { content: L.wNoKV } });
+    if (!env.RADAR_KV) return reply({ type: 4, data: { content: L.wNoKV } });
     const sub = (it.data.options || [])[0] || {};
     const arg = k => ((sub.options || []).find(o => o.name === k) || {}).value;
     const user = (it.member && it.member.user) || it.user || {};
     const key = `watch:${user.id}`;
     const list = JSON.parse((await env.RADAR_KV.get(key)) || '[]');
     if (sub.name === 'list') {
-      if (!list.length) return json({ type: 4, data: { content: L.wNone } });
-      return json(embed(L.wList, list.map((w, i) => {
+      if (!list.length) return reply({ type: 4, data: { content: L.wNone } });
+      return reply(embed(L.wList, list.map((w, i) => {
         const g = data.games.find(x => String(x.id) === String(w.id));
         return `**${i + 1}.** [${w.name.slice(0, 48)}](${site}/?game=${w.id}) — ${g ? fmt(g.playing) : '—'} · ${pct(g ? trend(g)[0] : null)} (${L.h24}) · ${L.wThr(w.pct)}`;
       })));
@@ -319,48 +321,48 @@ async function discord(req, env) {
       const q = String(arg('nombre') || '').toLowerCase();
       const g = findGame(data.games, q);
       const w = (g && list.find(x => String(x.id) === String(g.id))) || list.find(x => x.name.toLowerCase().includes(q));
-      if (!w) return json({ type: 4, data: { content: L.notFound } });
+      if (!w) return reply({ type: 4, data: { content: L.notFound } });
       await env.RADAR_KV.put(key, JSON.stringify(list.filter(x => x !== w)));
-      return json({ type: 4, data: { content: L.wRemoved(w.name) } });
+      return reply({ type: 4, data: { content: L.wRemoved(w.name) } });
     }
     if (sub.name === 'add') {
       const g = findGame(data.games, String(arg('nombre') || ''));
-      if (!g) return json({ type: 4, data: { content: L.notFound } });
+      if (!g) return reply({ type: 4, data: { content: L.notFound } });
       const p = Math.min(500, Math.max(5, arg('umbral') || 30));
       const existing = list.find(x => String(x.id) === String(g.id));
       if (existing) { existing.pct = p; existing.channel = it.channel_id; }
       else {
-        if (list.length >= 25) return json({ type: 4, data: { content: L.wMax } });
+        if (list.length >= 25) return reply({ type: 4, data: { content: L.wMax } });
         list.push({ id: g.id, name: g.name, pct: p, channel: it.channel_id, guild: it.guild_id || null, since: Date.now() });
       }
       await env.RADAR_KV.put(key, JSON.stringify(list));
-      return json({ type: 4, data: { content: existing ? L.wExists(g.name, p) : L.wAdded(g.name, p) } });
+      return reply({ type: 4, data: { content: existing ? L.wExists(g.name, p) : L.wAdded(g.name, p) } });
     }
   }
 
   if (name === 'top') {
     const n = Math.min(25, Math.max(1, opt('n') || 10));
     const rows = [...data.games].sort((a, b) => (b.playing || 0) - (a.playing || 0)).slice(0, n);
-    return json(embed(L.top(n), rows.map(line)));
+    return reply(embed(L.top(n), rows.map(line)));
   }
   if (name === 'rising') {
     const rows = data.games.filter(g => (g.playing || 0) >= 2000 && trend(g)[1] != null).sort((a, b) => trend(b)[1] - trend(a)[1]).slice(0, 10);
-    return json(embed(L.rising, rows.map((g, i) => `**${i + 1}.** [${g.name.slice(0, 48)}](${site}/?game=${g.id}) — ${fmt(g.playing)} · **${pct(trend(g)[1])}** (${L.d7})`)));
+    return reply(embed(L.rising, rows.map((g, i) => `**${i + 1}.** [${g.name.slice(0, 48)}](${site}/?game=${g.id}) — ${fmt(g.playing)} · **${pct(trend(g)[1])}** (${L.d7})`)));
   }
   if (name === 'new') {
     const cutoff = new Date(Date.now() - 7 * 86400e3).toISOString().slice(0, 10);
     const rows = data.games.filter(g => g.added && g.added >= cutoff).sort((a, b) => (b.playing || 0) - (a.playing || 0)).slice(0, 10);
-    return json(embed(L.newest, rows.map((g, i) => `**${i + 1}.** [${g.name.slice(0, 48)}](${site}/?game=${g.id}) — ${fmt(g.playing)} · ${g.cat} · ${g.added}`)));
+    return reply(embed(L.newest, rows.map((g, i) => `**${i + 1}.** [${g.name.slice(0, 48)}](${site}/?game=${g.id}) — ${fmt(g.playing)} · ${g.cat} · ${g.added}`)));
   }
   if (name === 'studio') {
     const q = String(opt('nombre') || '').toLowerCase();
     let games = data.games.filter(g => (g.creator || '').toLowerCase().includes(q));
     if (!games.length) { const g = findGame(data.games, q); if (g) games = data.games.filter(x => x.cUrl === g.cUrl); }
-    if (!games.length) return json({ type: 4, data: { content: L.studioNF } });
+    if (!games.length) return reply({ type: 4, data: { content: L.studioNF } });
     games.sort((a, b) => (b.playing || 0) - (a.playing || 0));
     const total = games.reduce((s, g) => s + (g.playing || 0), 0), top = games[0];
     const lines = games.slice(0, 10).map(line);
-    return json({ type: 4, data: { embeds: [{
+    return reply({ type: 4, data: { embeds: [{
       title: `${top.creator}${top.verified ? ' ✓' : ''}`, url: top.cUrl, color: 0xf0b429, footer,
       fields: [
         { name: L.owner, value: top.cType === 'Group' ? L.group : L.user, inline: true },
@@ -373,7 +375,7 @@ async function discord(req, env) {
   }
   if (name === 'game') {
     const g = findGame(data.games, String(opt('nombre') || ''));
-    if (!g) return json({ type: 4, data: { content: L.notFound } });
+    if (!g) return reply({ type: 4, data: { content: L.notFound } });
     let liveP = null;
     try {
       const r = await robloxJson(`https://games.roblox.com/v1/games?universeIds=${g.id}`);
@@ -393,12 +395,12 @@ async function discord(req, env) {
       { name: L.tags, value: (g.tags || []).join(', ') || '—', inline: true }
     ];
     if (b.gp) fields.push({ name: L.passes, value: `${b.gp.n}${b.gp.min != null ? ` · ${b.gp.min}–${b.gp.max} R$` : ''}`, inline: true });
-    return json({ type: 4, data: { embeds: [{
+    return reply({ type: 4, data: { embeds: [{
       title: g.name.slice(0, 200), url: `https://www.roblox.com/games/${g.place}`, color: 0x5fd77c,
       thumbnail: g.icon ? { url: g.icon } : undefined, image: g.thumb ? { url: g.thumb } : undefined,
       description: `${g.creator || ''}${g.verified ? ' ✓' : ''} · [Roblox Radar](${site}/?game=${g.id})`,
       fields, footer
     }] } });
   }
-  return json({ type: 4, data: { content: '?' } });
+  return reply({ type: 4, data: { content: '?' } });
 }
