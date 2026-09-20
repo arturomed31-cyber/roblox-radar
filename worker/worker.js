@@ -36,13 +36,7 @@ export default {
   // Cron Trigger: kick the hourly reading on GitHub (reliable, unlike GitHub's own schedule)
   async scheduled(event, env, ctx) {
     if (event.cron === '25 * * * *') { ctx.waitUntil(checkWatches(env)); return; }
-    if (!env.GITHUB_TOKEN) return;
-    const repo = env.GITHUB_REPO || 'arturomed31-cyber/roblox-radar';
-    ctx.waitUntil(fetch(`https://api.github.com/repos/${repo}/actions/workflows/refresh.yml/dispatches`, {
-      method: 'POST',
-      headers: { 'authorization': `Bearer ${env.GITHUB_TOKEN}`, 'accept': 'application/vnd.github+json', 'user-agent': UA, 'content-type': 'application/json' },
-      body: JSON.stringify({ ref: 'main' })
-    }));
+    ctx.waitUntil(dispatchReading(env).then(r => console.log('dispatch reading:', JSON.stringify(r))));
   },
 
   async fetch(req, env) {
@@ -52,6 +46,10 @@ export default {
       if (url.pathname === '/discord') return discord(req, env);
       if (url.pathname === '/register') return register(url, env);
       if (url.pathname === '/health') return json({ ok: true, t: Date.now() });
+      if (url.pathname === '/dispatch') {   // manual test of the GitHub trigger (ADMIN_KEY)
+        if (!env.ADMIN_KEY || url.searchParams.get('key') !== env.ADMIN_KEY) return json({ error: 'forbidden' }, 403);
+        return json(await dispatchReading(env));
+      }
       if (url.pathname === '/inbox') return inbox(req, url, env);
       if (url.pathname === '/check-watches') {   // manual run, same key as /inbox
         if (!env.INBOX_KEY || url.searchParams.get('key') !== env.INBOX_KEY) return json({ error: 'forbidden' }, 403);
@@ -64,6 +62,18 @@ export default {
     return new Response('roblox-radar worker', { status: 200 });
   }
 };
+
+/* ---------------- GitHub: start the hourly reading ---------------- */
+async function dispatchReading(env) {
+  if (!env.GITHUB_TOKEN) return { ok: false, error: 'GITHUB_TOKEN not set' };
+  const repo = env.GITHUB_REPO || 'arturomed31-cyber/roblox-radar';
+  const r = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/refresh.yml/dispatches`, {
+    method: 'POST',
+    headers: { 'authorization': `Bearer ${env.GITHUB_TOKEN}`, 'accept': 'application/vnd.github+json', 'user-agent': UA, 'content-type': 'application/json' },
+    body: JSON.stringify({ ref: 'main' })
+  });
+  return { ok: r.status === 204, status: r.status, body: r.status === 204 ? '' : (await r.text()).slice(0, 300), at: new Date().toISOString() };
+}
 
 /* ---------------- helpers ---------------- */
 function json(obj, status = 200, extra = {}) {
