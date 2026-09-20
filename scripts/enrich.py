@@ -104,7 +104,7 @@ def main():
         return (today - datetime.strptime(e, "%Y-%m-%d").replace(tzinfo=timezone.utc)).days >= args.max_age
 
     todo = [g for g in games if stale(g)]
-    todo.sort(key=lambda g: -(g.get("playing") or 0))
+    todo.sort(key=lambda g: (bool(biz.get(str(g["id"]), {}).get("enrichedAt")), -(g.get("playing") or 0)))
     print(f"enriching {len(todo)} of {len(games)} games (budget {args.budget_minutes} min)", flush=True)
 
     # ---- flags from the batch endpoint (cheap) ----
@@ -115,24 +115,34 @@ def main():
             flags[str(item["id"])] = {"vip": bool(item.get("createVipServersAllowed")), "paid": item.get("price")}
         time.sleep(0.8)
 
-    # ---- owner groups (one request per distinct group) ----
+    # ---- owner groups: name/created/verified in batches of 100 (cheap); member counts are
+    # one request per group and heavily rate-limited, so they are fetched lazily below ----
     gid_of = {str(g["id"]): g["cUrl"].rsplit("/", 1)[1] for g in todo if g.get("cType") == "Group" and g.get("cUrl")}
     groups = {}
-    for i, grp_id in enumerate(sorted(set(gid_of.values())), 1):
-        if time.time() > deadline:
-            print("  budget reached during groups", flush=True)
-            break
+    for chunk in batches(sorted(set(gid_of.values())), 100):
+        d = get_json("https://groups.roblox.com/v2/groups?groupIds=" + ",".join(chunk))
+        for item in (d or {}).get("data", []):
+            groups[str(item["id"])] = {"m": None, "c": (item.get("created") or "")[:10] or None,
+                                       "v": bool(item.get("hasVerifiedBadge")), "n": item.get("name")}
+        time.sleep(0.8)
+    print(f"  groups: {len(groups)} basic records", flush=True)
+    members_deadline = t_start + args.budget_minutes * 60 * 0.6   # member counts get at most 60 % of the budget
+    members_done = set()
+
+    def member_count(grp_id):
+        """One v1 request; returns None when rate-limited past the members budget."""
+        if grp_id in members_done or time.time() > members_deadline:
+            return
+        members_done.add(grp_id)
         try:
-            d = get_json(f"https://groups.roblox.com/v1/groups/{grp_id}")
+            d = get_json(f"https://groups.roblox.com/v1/groups/{grp_id}", tries=2)
         except Unauthorized:
             d = None
         if d and d.get("id"):
-            groups[grp_id] = {"m": d.get("memberCount"), "c": (d.get("created") or "")[:10] or None,
-                              "v": bool(d.get("hasVerifiedBadge")), "n": d.get("name")}
-        if i % 100 == 0:
-            print(f"  groups {i}", flush=True)
-        time.sleep(0.7)
-    print(f"  groups fetched: {len(groups)}", flush=True)
+            groups.setdefault(grp_id, {})["m"] = d.get("memberCount")
+            groups[grp_id].setdefault("n", d.get("name"))
+            groups[grp_id].setdefault("v", bool(d.get("hasVerifiedBadge")))
+            groups[grp_id].setdefault("c", (d.get("created") or "")[:10] or None)
 
     # ---- per game: passes + social links ----
     cookie = os.environ.get("ROBLOX_COOKIE", "").strip()
@@ -159,7 +169,7 @@ def main():
             prices = [p.get("price") for p in d.get("data", []) if isinstance(p.get("price"), (int, float)) and p.get("price") > 0]
             e["gp"] = {"n": len(d.get("data", [])), "min": min(prices) if prices else None,
                        "max": max(prices) if prices else None, "sum": sum(prices) if prices else 0}
-        time.sleep(0.5)
+        time.sleep(0.4)
         if cookie_hdr:
             try:
                 sl = get_json(f"https://games.roblox.com/v1/games/{gid}/social-links/list", tries=3, headers=cookie_hdr)
@@ -180,9 +190,14 @@ def main():
         f = flags.get(gid)
         if f:
             e["vip"], e["paid"] = f["vip"], f["paid"]
-        grp = groups.get(gid_of.get(gid, ""))
-        if grp:
-            e["grp"] = grp
+        grp_id = gid_of.get(gid, "")
+        if grp_id:
+            member_count(grp_id)
+            grp = groups.get(grp_id)
+            if grp:
+                if grp.get("m") is None and (e.get("grp") or {}).get("m") is not None:
+                    grp = dict(grp, m=e["grp"]["m"])   # keep last known count
+                e["grp"] = grp
         e["enrichedAt"] = stamp
         done += 1
         if i % 100 == 0:
