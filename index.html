@@ -384,7 +384,39 @@ footer{margin-top:20px;font-size:11.5px;color:var(--text-faint);font-family:'IBM
   .signals{grid-template-columns:repeat(3,1fr);}
   .signal .lbl{font-size:10.5px;}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none !important;}}
+/* ---------- motion (skipped entirely when the OS asks for reduced motion) ---------- */
+.skel{display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--border);}
+.skel i{display:block;background:var(--panel-2);border-radius:6px;height:12px;}
+.skel .ico{width:44px;height:44px;border-radius:8px;flex:none;}
+.skel .w1{width:180px;margin-bottom:8px;} .skel .w2{width:110px;height:9px;} .skel .w3{width:80px;height:20px;border-radius:99px;}
+.skel .num{width:52px;margin-left:auto;}
+@media (prefers-reduced-motion:no-preference){
+  .skel i{background:linear-gradient(90deg,var(--panel-2) 25%,var(--panel-3) 50%,var(--panel-2) 75%);background-size:200% 100%;animation:shimmer 1.3s linear infinite;}
+  @keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+  tbody tr.in{animation:rowIn .32s cubic-bezier(.2,.7,.2,1) both;}
+  @keyframes rowIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .overlay:not([hidden]){animation:fadeIn .18s ease-out;}
+  .overlay:not([hidden]) .modal{animation:riseIn .26s cubic-bezier(.2,.7,.2,1);}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes riseIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+  .chart-line{stroke-dasharray:1;stroke-dashoffset:1;animation:draw .7s ease-out forwards;}
+  .chart-area{animation:fadeIn .7s ease-out both;animation-delay:.25s;}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .signal{transition:background .12s,transform .15s;}
+  .signal:hover{transform:translateY(-1px);}
+  .signal .n{transition:color .2s;}
+  .thumb-btn,.link-btn,.share-btn,.chip,.more-btn,.range-btn,.view-switch button{transition:border-color .12s,color .12s,background .12s,transform .12s;}
+  .thumb-btn:hover{transform:scale(1.06);}
+  .link-btn:active,.share-btn:active,.more-btn:active{transform:scale(.97);}
+  .score-pill{transition:transform .15s;}
+  tbody tr:hover .score-pill{transform:scale(1.06);}
+  .lang-menu:not([hidden]){animation:riseIn .16s ease-out;}
+  .cmp-box,.studio-wrap,.market-wrap{animation:fadeIn .25s ease-out;}
+  .star-btn{transition:transform .15s,color .12s;}
+  .star-btn:active{transform:scale(1.3);}
+  .delta.up,.delta.down{animation:fadeIn .4s ease-out;}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important;}}
 .thumb-btn img{width:100%;height:100%;object-fit:cover;display:block;}
 .loading{padding:60px 20px;text-align:center;color:var(--text-faint);font-family:'IBM Plex Mono',monospace;font-size:13px;}
 
@@ -959,6 +991,9 @@ function rowHtml(g){
   </tr>`;
 }
 
+function animateRows(tbody){
+  [...tbody.children].slice(0, 24).forEach((tr, i) => { tr.classList.add('in'); tr.style.animationDelay = (i * 22) + 'ms'; });
+}
 function render(){
   saveFilters();
   syncUrl();
@@ -983,6 +1018,7 @@ function render(){
     return;
   }
   tbody.innerHTML = rows.slice(0, state.shown).map(rowHtml).join('');
+  animateRows(tbody);
   moreRow.hidden = rows.length <= state.shown;
   document.getElementById('moreBtn').textContent = t('more')(rows.length - state.shown);
 }
@@ -1153,8 +1189,8 @@ function chartHtml(g, rangeKey){
     body = `<div class="chart-wrap" id="chartWrap">
       <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${t('ch_title')}" id="chartSvg">
         ${ygrid}${xgrid}
-        <path d="${area.trim()}" fill="color-mix(in srgb, var(--accent) 18%, transparent)" stroke="none"/>
-        <path d="${line.trim()}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        <path class="chart-area" d="${area.trim()}" fill="color-mix(in srgb, var(--accent) 18%, transparent)" stroke="none"/>
+        <path class="chart-line" pathLength="1" d="${line.trim()}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
         <line x1="${x(peak.t).toFixed(1)}" y1="${y(peak.v).toFixed(1)}" x2="${x(peak.t).toFixed(1)}" y2="${PT}" stroke="var(--warn)" stroke-width="1" stroke-dasharray="3 3"/>
         <circle cx="${x(peak.t).toFixed(1)}" cy="${y(peak.v).toFixed(1)}" r="4" fill="var(--warn)"/>
         <text x="${peakLabelX.toFixed(1)}" y="${PT+9}" text-anchor="middle" font-size="10" font-family="IBM Plex Mono, monospace" font-weight="600" fill="var(--warn)">${t('ch_peakLbl')} ${fmtFull(peak.v)}</text>
@@ -1429,13 +1465,24 @@ function toggleTag(k){
   if(state.tags.has(k)) state.tags.delete(k); else state.tags.add(k);
   state.shown = PAGE; render();
 }
+function countUp(nodes){
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const t0 = performance.now(), dur = 700;
+  const step = now => {
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    nodes.forEach(n => { n.textContent = Math.round(Number(n.dataset.n) * e); });
+    if(k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
 function buildSignals(){
   const el = document.getElementById('signals');
   el.innerHTML = SIGNAL_DEFS.map(s => {
     const n = GAMES.filter(g => g.tags.includes(s.key)).length;
-    return `<button type="button" class="signal ${s.tone}" data-tag="${s.key}" aria-pressed="false"><div class="n">${n}</div><div class="lbl">${t('signals')[s.key]}</div></button>`;
+    return `<button type="button" class="signal ${s.tone}" data-tag="${s.key}" aria-pressed="false"><div class="n" data-n="${n}">${n}</div><div class="lbl">${t('signals')[s.key]}</div></button>`;
   }).join('');
   el.querySelectorAll('.signal').forEach(n => n.addEventListener('click', () => toggleTag(n.dataset.tag)));
+  if(!buildSignals.done){ buildSignals.done = true; countUp(el.querySelectorAll('.n[data-n]')); }
 }
 function buildCatSelect(){
   const sel = document.getElementById('catSelect');
@@ -1675,6 +1722,7 @@ function renderWatch(){
     <td><input type="checkbox" class="cmp-check" data-cmp="${id}" ${on ? 'checked' : ''} ${full ? `disabled title="${tw('w_cmpMax')}"` : ''} aria-label="${tw('w_cmp')}"></td>`);
   }).join('');
   const wb = document.getElementById('wbody');
+  animateRows(wb);
   wb.onclick = e => {
     const st = e.target.closest('[data-star]');
     if(st){ toggleWatch(st.dataset.star); return; }
@@ -2223,7 +2271,8 @@ async function loadData(){
 async function init(){
   document.getElementById('legalBtn').textContent = t('lg_link');
   applyLanguage();
-  document.getElementById('tbody').innerHTML = `<tr><td colspan="7"><div class="loading">${t('loading')}</div></td></tr>`;
+  document.getElementById('tbody').innerHTML = Array.from({length: 8}, () =>
+    `<tr><td colspan="7" style="padding:0"><div class="skel"><i class="ico"></i><div><i class="w1"></i><i class="w2"></i></div><i class="w3"></i><i class="num"></i><i class="num"></i></div></td></tr>`).join('');
   try { await loadData(); }
   catch (e) { document.getElementById('tbody').innerHTML = `<tr><td colspan="7"><div class="loading">${t('loadErr')}</div></td></tr>`; return; }
   indexGames();
