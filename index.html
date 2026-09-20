@@ -1436,6 +1436,8 @@ function openModal(idx, rangeKey){
         <a class="link-btn primary" href="https://www.roblox.com/games/${g.place}" target="_blank" rel="noopener">${t('openRoblox')}</a>
         ${g.cUrl ? `<a class="link-btn" href="${esc(g.cUrl)}" target="_blank" rel="noopener">${g.cType === 'Group' ? t('group') : t('profile')}</a>` : ''}
         ${socials}
+        <a class="link-btn" href="https://romonitorstats.com/experience/${g.place}/" target="_blank" rel="noopener" title="${esc(th('tip'))}">${th('romonitor')}</a>
+        <a class="link-btn" href="https://www.rolimons.com/game/${g.place}" target="_blank" rel="noopener" title="${esc(th('tip'))}">${th('rolimons')}</a>
         <button type="button" class="link-btn ghost" id="shareGame">${ts('shareGame')}</button>
         <button type="button" class="link-btn star ${isWatched(g.id) ? 'on' : ''}" id="watchGame">${isWatched(g.id) ? '★ ' + tw('w_on') : '☆ ' + tw('w_add')}</button>
       </div>
@@ -2076,6 +2078,18 @@ const SHARE_I18N = {
   ja: {share:'この表示へのリンクをコピー', shareGame:'リンクをコピー', copied:'コピーしました ✓'}
 };
 const ts = k => (SHARE_I18N[settings.lang] || SHARE_I18N.en)[k];
+// external sites that have kept player history for years; we link, we never copy their data
+const HIST_I18N = {
+  en:{romonitor:'History on RoMonitor', rolimons:'Rolimons', tip:'Years of player history on an external site (opens in a new tab)'},
+  es:{romonitor:'Historial en RoMonitor', rolimons:'Rolimons', tip:'Años de historial de jugadores en un sitio externo (se abre en otra pestaña)'},
+  pt:{romonitor:'Histórico no RoMonitor', rolimons:'Rolimons', tip:'Anos de histórico de jogadores em um site externo (abre em nova aba)'},
+  fr:{romonitor:'Historique sur RoMonitor', rolimons:'Rolimons', tip:'Des années d’historique de joueurs sur un site externe (nouvel onglet)'},
+  de:{romonitor:'Verlauf auf RoMonitor', rolimons:'Rolimons', tip:'Jahre an Spielerverlauf auf einer externen Seite (neuer Tab)'},
+  it:{romonitor:'Storico su RoMonitor', rolimons:'Rolimons', tip:'Anni di storico giocatori su un sito esterno (nuova scheda)'},
+  ru:{romonitor:'История на RoMonitor', rolimons:'Rolimons', tip:'Многолетняя история онлайна на внешнем сайте (новая вкладка)'},
+  ja:{romonitor:'RoMonitorで履歴を見る', rolimons:'Rolimons', tip:'外部サイトの長期プレイヤー履歴（新しいタブで開きます）'}
+};
+const th = k => (HIST_I18N[settings.lang] || HIST_I18N.en)[k];
 function buildUrl(gameId){
   const q = new URLSearchParams();
   if(gameId) q.set('game', gameId);
