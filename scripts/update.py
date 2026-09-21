@@ -22,7 +22,7 @@ HISTORY = ROOT / "data" / "history.json"
 TRENDS = ROOT / "data" / "trends.json"   # small per-game 24h/7d/30d changes for the Discord bot
 
 BATCH = 50
-PAUSE = 1.0
+PAUSE = 0.4   # GitHub's runners are not rate-limited at this pace; local runs may need more
 UA = "roblox-radar/1.0 (+https://github.com)"
 
 
