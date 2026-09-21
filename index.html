@@ -70,7 +70,8 @@ header{
 }
 .title-wrap{position:relative;display:inline-block;}
 .title-wrap > *{position:relative;}
-.pulse{position:absolute !important;left:0;top:0;height:40px;width:0;pointer-events:none;overflow:visible;z-index:0;opacity:.9;}
+.pulse{position:absolute !important;left:0;top:0;height:40px;width:0;pointer-events:none;overflow:visible;z-index:0;opacity:.95;}
+.pulse image{pointer-events:auto;cursor:pointer;}
 @media (max-width:700px){.pulse{display:none;}}
 .pulse-line{fill:none;stroke:var(--accent);stroke-width:1.7;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke;}
 .pulse-line.up{stroke:var(--good);}
@@ -563,6 +564,7 @@ tr.st.open .chev{transform:rotate(90deg);}
         </defs>
         <g mask="url(#pulseMask)"><g class="pulse-track" id="pulseTrack">
           <path class="pulse-line flat" id="pulseFlat"/><path class="pulse-line up" id="pulseUp"/><path class="pulse-line down" id="pulseDown"/>
+          <g id="pulseDeco"></g>
         </g></g>
       </svg>
     <div>
@@ -2182,47 +2184,67 @@ function renderLive(g){
 }
 
 /* ---------- heartbeat behind the title (rising = green, falling = red) ---------- */
-function pulsePoints(){
-  // one beat per top game, in ticker order: rising games spike up, falling games dip down, size ∝ 24 h change
-  const rows = GAMES.length ? [...GAMES].sort((a,b) => (b.playing||0) - (a.playing||0)).slice(0, 24).filter(g => g.d1 != null) : [];
-  if(rows.length < 6) return [[0,80],[70,80],[82,72],[94,80],[150,80],[162,18],[174,112],[186,80],[260,80],[272,74],[284,80],[360,80],[372,40],[384,104],[396,80],
-    [470,80],[486,70],[500,80],[560,80],[572,26],[584,110],[596,80],[660,80],[672,74],[684,80],[760,80],[772,44],[784,102],[796,80],[900,80]];
-  const step = 900 / rows.length, pts = [[0,80]];
-  rows.forEach((g, i) => {
-    const x0 = i * step, amp = Math.min(60, 8 + Math.abs(g.d1) * 1.2);       // 8–60 px of amplitude
-    const dir = g.d1 >= 0 ? -1 : 1;                                            // SVG y grows downwards
-    pts.push([x0 + step*0.35, 80], [x0 + step*0.5, 80 + dir*amp], [x0 + step*0.62, 80 - dir*amp*0.25], [x0 + step*0.72, 80]);
-  });
-  pts.push([900,80]);
-  return pts;
+function pulseBeats(){
+  // alternate one riser and one faller (biggest 24 h moves among the top 150 games), 12 of each
+  if(!GAMES.length) return [];
+  const top = [...GAMES].sort((a,b) => (b.playing||0) - (a.playing||0)).slice(0, 150).filter(g => g.d1 != null && (g.playing||0) >= 1000);
+  const ups = top.filter(g => g.d1 > 0).sort((a,b) => b.d1 - a.d1).slice(0, 12);
+  const downs = top.filter(g => g.d1 < 0).sort((a,b) => a.d1 - b.d1).slice(0, 12);
+  const beats = [];
+  for(let i = 0; i < Math.max(ups.length, downs.length); i++){ if(ups[i]) beats.push(ups[i]); if(downs[i]) beats.push(downs[i]); }
+  return beats;
 }
+const PX = {x: -900, scale: 1, vh: 60};
 function layoutPulse(){
   const svg = document.querySelector('.pulse'), h1 = document.querySelector('h1'), header = document.querySelector('header');
   if(!svg || !h1) return;
   const hr = header.getBoundingClientRect(), r = h1.getBoundingClientRect();
-  const left = r.right - hr.left + 12, width = hr.width - left;
-  svg.style.left = left + 'px'; svg.style.top = (r.top - hr.top - 4) + 'px';
-  svg.style.height = (r.height + 8) + 'px'; svg.style.width = Math.max(0, width) + 'px';
-  PX.scale = width > 0 ? width / 900 : 1;   // screen px per viewBox unit
+  const left = r.right - hr.left + 12, width = hr.width - left, height = r.height + 26;
+  svg.style.left = left + 'px'; svg.style.top = (r.top - hr.top - 13) + 'px';
+  svg.style.height = height + 'px'; svg.style.width = Math.max(0, width) + 'px';
+  PX.scale = width > 0 ? width / 900 : 1;                // screen px per viewBox unit
+  PX.vh = width > 0 ? 900 * height / width : 60;         // viewBox height that keeps icons undistorted
+  svg.setAttribute('viewBox', `0 0 900 ${PX.vh.toFixed(1)}`);
+  svg.querySelector('#pulseMask rect')?.setAttribute('height', PX.vh.toFixed(1));
+  drawPulse();
 }
-const PX = {x: -900, scale: 1};
 window.addEventListener('resize', layoutPulse);
-function buildPulse(){
-  const pts = pulsePoints();
-  const all = pts.concat(pts.slice(1).map(([x,y]) => [x + 900, y]));   // two copies for a seamless loop
+function drawPulse(){
+  const beats = pulseBeats(), vh = PX.vh, base = vh * 0.5;
   const d = {flat:'', up:'', down:''};
-  for(let i = 1; i < all.length; i++){
-    const [x0,y0] = all[i-1], [x1,y1] = all[i];
-    const k = y1 < y0 ? 'up' : y1 > y0 ? 'down' : 'flat';   // SVG y grows downwards
-    d[k] += `M${x0},${y0}L${x1},${y1}`;
+  let deco = '';
+  const seg = (x0,y0,x1,y1) => { const k = y1 < y0 ? 'up' : y1 > y0 ? 'down' : 'flat'; d[k] += `M${x0.toFixed(1)},${y0.toFixed(1)}L${x1.toFixed(1)},${y1.toFixed(1)}`; };
+  if(beats.length < 4){
+    // fallback shape until data is in
+    const pts = [[0,base],[150,base],[162,base*0.3],[174,base*1.6],[186,base],[400,base],[412,base*0.4],[424,base*1.5],[436,base],[650,base],[662,base*0.3],[674,base*1.6],[686,base],[900,base]];
+    for(const copy of [0, 900]) for(let i = 1; i < pts.length; i++) seg(pts[i-1][0]+copy, pts[i-1][1], pts[i][0]+copy, pts[i][1]);
+  } else {
+    const step = 900 / beats.length, icon = Math.min(13, step * 0.34), fs = icon * 0.62;
+    const maxAmp = Math.max(4, base - icon - 4);           // leave room for the icon above / below the tip
+    for(const copy of [0, 900]){
+      let px = copy, py = base;
+      beats.forEach((g, i) => {
+        const x0 = copy + i * step, up = g.d1 > 0, dir = up ? -1 : 1;
+        const amp = Math.min(maxAmp, 5 + Math.abs(g.d1) / 8 * (maxAmp - 5) / 4);   // 5 → maxAmp as |change| goes 0 → ~32 %
+        const xa = x0 + step*0.30, xt = x0 + step*0.5, xb = x0 + step*0.70, yt = base + dir * amp;
+        seg(px, py, xa, base); seg(xa, base, xt, yt); seg(xt, yt, xb, base);
+        px = xb; py = base;
+        const iy = up ? yt - icon - 1.5 : yt + 1.5;
+        deco += `<image href="${esc(g.icon || '')}" x="${(xt - icon/2).toFixed(1)}" y="${iy.toFixed(1)}" width="${icon.toFixed(1)}" height="${icon.toFixed(1)}" preserveAspectRatio="xMidYMid slice" style="border-radius:3px" data-open="${g._i}"/>
+          <text x="${(xt + icon/2 + 1.5).toFixed(1)}" y="${(iy + icon*0.72).toFixed(1)}" font-size="${fs.toFixed(1)}" font-family="IBM Plex Mono, monospace" font-weight="700" fill="${up ? 'var(--good)' : 'var(--risk)'}">${fmtPct(g.d1)}</text>`;
+      });
+      seg(px, py, copy + 900, base);
+    }
   }
   document.getElementById('pulseFlat').setAttribute('d', d.flat);
   document.getElementById('pulseUp').setAttribute('d', d.up);
   document.getElementById('pulseDown').setAttribute('d', d.down);
-  layoutPulse();
+  document.getElementById('pulseDeco').innerHTML = deco;
 }
+function buildPulse(){ layoutPulse(); }
 buildPulse();
 document.fonts?.ready?.then(layoutPulse);
+document.querySelector('.pulse').addEventListener('click', e => { const im = e.target.closest('[data-open]'); if(im) openModal(Number(im.dataset.open)); });
 
 /* ---------- ticker: top games with their 24 h change, scrolling like a market tape ---------- */
 function buildTicker(){
