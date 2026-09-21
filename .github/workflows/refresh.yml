@@ -26,10 +26,6 @@ jobs:
       - name: Read player counts
         run: python scripts/update.py --light
 
-      - name: Limiteds (every 6 h)
-        run: python scripts/limiteds.py --every 6
-        continue-on-error: true
-
       - name: Discord alerts
         run: python scripts/alerts.py
         env:
