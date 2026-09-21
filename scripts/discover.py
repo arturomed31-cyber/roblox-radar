@@ -20,6 +20,7 @@ import argparse
 import glob
 import json
 import re
+import sys
 import time
 import urllib.error
 import urllib.parse
@@ -27,9 +28,11 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from histstore import load_history, save_history  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 GAMES = ROOT / "data" / "games.json"
-HISTORY = ROOT / "data" / "history.json"
 OVERRIDES = ROOT / "data" / "overrides.json"
 
 UA = "roblox-radar/1.0 (+https://github.com)"
@@ -362,7 +365,7 @@ def main():
     args = ap.parse_args()
 
     games_doc = json.loads(GAMES.read_text(encoding="utf-8"))
-    history = json.loads(HISTORY.read_text(encoding="utf-8"))
+    history = load_history()
     overrides = {}
     if OVERRIDES.exists():
         for o in json.loads(OVERRIDES.read_text(encoding="utf-8")):
@@ -404,7 +407,7 @@ def main():
     added = add_candidates(games_doc, history, overrides, pool, args.min_players)
     if added or fixed:
         GAMES.write_text(json.dumps(games_doc, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-        HISTORY.write_text(json.dumps(history, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        save_history(history)
     print(f"added {added} games (total {len(games_doc['games'])})")
 
 

@@ -792,7 +792,7 @@ tr.st.open .chev{transform:rotate(90deg);}
 </div>
 
 <script>
-let DATA = null, GAMES = [], SAMPLE_TIMES = [], SAMPLE_MS = [];
+let DATA = null, GAMES = [];
 
 /* ---------- i18n ---------- */
 /* I18N dictionaries live in i18n.js */
@@ -884,7 +884,6 @@ function loadFilters(){
 function indexGames(){
   GAMES.forEach((g,i) => { g._i = i; });
   [...GAMES].sort((a,b)=>(b.playing||0)-(a.playing||0)).forEach((g,i)=>{ g._rank = i+1; });
-  SAMPLE_MS = SAMPLE_TIMES.map(x => new Date(x).getTime());
   computeMetrics();
 }
 
@@ -911,8 +910,8 @@ const clamp01 = v => Math.max(0, Math.min(1, v));
 function computeMetrics(){
   const maxLog = Math.log10(300000), minLog = Math.log10(200);
   GAMES.forEach(g => {
-    const s = seriesFor(g);
-    g.d1 = changeOver(s, 1); g.d7 = changeOver(s, 7); g.d30 = changeOver(s, 30);
+    const tr = g.tr || {};
+    g.d1 = tr.d1 ?? null; g.d7 = tr.d7 ?? null; g.d30 = tr.d30 ?? null; g.peak = tr.pk ?? null;
     const mom = g.d7;
     g.trend = g.age != null && g.age < 30 ? 'new' : mom == null ? null : mom >= 15 ? 'rising' : mom <= -15 ? 'falling' : 'flat';
 
@@ -927,8 +926,7 @@ function computeMetrics(){
     const eng = g.vpd && g.playing ? clamp01((g.vpd / g.playing - 5) / 60) : 0.3;
     parts.push(['sc_engage', Math.round(eng * 15), 15, false]);
     // business estimates (rough, see bz_note)
-    const last24 = s.length ? s.filter(p => p.t >= s[s.length-1].t - 86400e3) : [];
-    const avgCcu = last24.length >= 3 ? last24.reduce((a,p) => a + p.v, 0) / last24.length : (g.playing || 0);
+    const avgCcu = tr.a24 != null ? tr.a24 : (g.playing || 0);
     g.dau = avgCcu ? Math.round(avgCcu * 12) : null;
     let monet = 1;
     if(g.gp){ monet = g.gp.n === 0 ? 0.5 : (g.gp.n >= 8 || (g.gp.max || 0) >= 500) ? 1.3 : 1; }
@@ -1054,8 +1052,8 @@ function applyLanguage(){
     document.getElementById('legalBtn').textContent = t('lg_link');
     if(!legalOverlay.hidden) document.getElementById('legalContent').innerHTML = t('lg_html');
     if(!methodOverlay.hidden) openMethod();
-    const days = SAMPLE_MS.length > 1 ? Math.max(1, Math.round((SAMPLE_MS[SAMPLE_MS.length-1] - SAMPLE_MS[0]) / 86400e3)) : 0;
-    document.getElementById('trendCoverage').textContent = t('coverage')(days, SAMPLE_MS.length);
+    const days = DATA.first && DATA.last ? Math.max(1, Math.round((new Date(DATA.last) - new Date(DATA.first)) / 86400e3)) : 0;
+    document.getElementById('trendCoverage').textContent = t('coverage')(days, DATA.readings);
     render();
     renderMarket();
     renderWatch();
@@ -1292,7 +1290,8 @@ function niceStep(span, target){
   return 10*mag;
 }
 function seriesFor(g){
-  return (g.hist || []).map((v,i) => ({t: SAMPLE_MS[i], v})).filter(p => p.v != null && p.t).sort((a,b)=>a.t-b.t);
+  if(!g.hist) return [];
+  return g.hist.v.map((v,i) => ({t: g.hist.t[i], v})).filter(p => p.v != null && p.t).sort((a,b)=>a.t-b.t);
 }
 function pointsInRange(all, range){
   if(!all.length) return [];
@@ -1563,8 +1562,7 @@ function openModal(idx, rangeKey){
   if(!g) return;
   if(overlay.hidden) lastFocus = document.activeElement;
 
-  const series = seriesFor(g);
-  const peak = series.length ? Math.max(...series.map(p=>p.v)) : null;
+  const peak = g.peak;
   const stats = [
     [t('st_now'), fmtFull(g.playing), 'now'], [t('st_rank'), '#'+g._rank], [t('st_peak'), peak != null ? fmtFull(peak) : '—'],
     [t('st_visits'), fmtFull(g.visits), 'visits'], [t('st_vpd'), fmtFull(g.vpd)], [t('st_rating'), g.like != null ? g.like+'%' : '—', 'rating'],
@@ -1633,7 +1631,12 @@ function openModal(idx, rangeKey){
       ${socials ? '' : `<div class="no-socials">${t('noSocials')}</div>`}
     </div>`;
 
-  renderChart(g, rangeKey || pickDefaultRange(series));
+  currentGame = g; currentItem = null; currentRange = rangeKey || currentRange;
+  if(g.hist) renderChart(g, rangeKey || pickDefaultRange(seriesFor(g)));
+  else {
+    document.getElementById('chartBox').innerHTML = `<div class="chart-head"><span class="t">${t('ch_title')}</span></div><div class="loading" style="padding:30px">${t('loading')}</div>`;
+    ensureHist([g]).then(() => { if(currentGame === g && !overlay.hidden) renderChart(g, rangeKey || pickDefaultRange(seriesFor(g))); });
+  }
   renderLive(g);
   overlay.hidden = false;
   syncUrl();
@@ -1946,7 +1949,7 @@ function renderWatch(){
     else CMP = CMP.filter(x => x !== id);
     saveWatch(); renderWatch();
   }));
-  renderCompare();
+  { const byId = new Map(GAMES.map(g => [String(g.id), g])); ensureHist(CMP.map(id => byId.get(id)).filter(Boolean)).then(renderCompare); }
   syncUrl();
 }
 function renderCompare(){
@@ -2011,7 +2014,7 @@ function renderCompare(){
   }
   // side-by-side metrics
   const metrics = [
-    ['st_now', g => g.playing, fmtFull, 1], ['st_peak', g => { const s = seriesFor(g); return s.length ? Math.max(...s.map(p=>p.v)) : null; }, fmtFull, 1],
+    ['st_now', g => g.playing, fmtFull, 1], ['st_peak', g => g.peak, fmtFull, 1],
     ['st_d1', g => g.d1, fmtPct, 1], ['st_d7', g => g.d7, fmtPct, 1], ['st_d30', g => g.d30, fmtPct, 1],
     ['st_rating', g => g.like, v => v == null ? '—' : v + '%', 1], ['st_visits', g => g.visits, fmtFull, 1], ['st_vpd', g => g.vpd, fmtFull, 1],
     ['st_favs', g => g.favs, fmtFull, 1], ['st_age', g => g.age, fmtAge, 0], ['st_upd', g => g.upd, fmtUpd, -1],
@@ -2988,9 +2991,9 @@ document.addEventListener('keydown', e => { if(e.key === 'Escape' && !legalOverl
 /* ---------- boot ---------- */
 async function loadData(){
   const bust = '?v=' + Math.floor(Date.now() / 3600e3);
-  const [gamesDoc, hist, shared, biz] = await Promise.all([
+  const [gamesDoc, trends, shared, biz] = await Promise.all([
     fetch('data/games.json' + bust).then(r => r.json()),
-    fetch('data/history.json' + bust).then(r => r.json()),
+    fetch('data/trends.json' + bust).then(r => r.ok ? r.json() : {t:{}}).catch(() => ({t:{}})),
     fetch('data/notes.json' + bust).then(r => r.ok ? r.json() : {}).catch(() => ({})),
     fetch('data/business.json' + bust).then(r => r.ok ? r.json() : {}).catch(() => ({}))
   ]);
@@ -3007,11 +3010,31 @@ async function loadData(){
     g.age = g.created ? Math.floor((now - new Date(g.created)) / 86400e3) : null;
     g.upd = g.updated ? Math.floor((now - new Date(g.updated)) / 86400e3) : null;
     g.vpd = g.age ? Math.round(g.visits / g.age) : null;
-    g.hist = hist.series[String(g.id)] || [];
+    g.tr = (trends.t || {})[String(g.id)] || {};   // d1/d7/d30, a24 (avg last 24 h), pk (peak on record)
+    g.hist = null;                                  // per-game series, fetched on demand (see ensureHist)
   });
-  DATA = {generated: gamesDoc.generated, sampleTimes: hist.times || []};
+  DATA = {generated: gamesDoc.generated, readings: trends.n || 0, first: trends.first, last: trends.last};
   GAMES = gamesDoc.games;
-  SAMPLE_TIMES = DATA.sampleTimes;
+}
+/* ---------- per-game history: data/h/NN.json, NN = last two digits of the id ---------- */
+const HSHARDS = new Map();   // shard -> Promise<{times, series}>
+const shardOf = id => { const s = String(id).slice(-2); return /^\d+$/.test(s) ? s.padStart(2, '0') : '00'; };
+function ensureHist(games){
+  const need = games.filter(g => g && !g.hist);
+  if(!need.length) return Promise.resolve();
+  const bust = '?v=' + Math.floor(Date.now() / 900e3);   // 15-min cache window
+  const shards = [...new Set(need.map(g => shardOf(g.id)))];
+  return Promise.all(shards.map(sh => {
+    if(!HSHARDS.has(sh)) HSHARDS.set(sh, fetch(`data/h/${sh}.json` + bust).then(r => r.ok ? r.json() : {times:[], series:{}}).catch(() => ({times:[], series:{}})));
+    return HSHARDS.get(sh);
+  })).then(docs => {
+    const bySh = Object.fromEntries(shards.map((sh, i) => [sh, docs[i]]));
+    need.forEach(g => {
+      const d = bySh[shardOf(g.id)], s = (d.series || {})[String(g.id)] || [];
+      const ms = (d.times || []).map(x => new Date(x).getTime());
+      g.hist = {t: ms, v: s};
+    });
+  });
 }
 async function init(){
   document.getElementById('legalBtn').textContent = t('lg_link');

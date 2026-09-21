@@ -16,13 +16,15 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from histstore import load_history, save_history  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 GAMES = ROOT / "data" / "games.json"
-HISTORY = ROOT / "data" / "history.json"
 TRENDS = ROOT / "data" / "trends.json"   # small per-game 24h/7d/30d changes for the Discord bot
 
 BATCH = 50
-PAUSE = 0.4   # GitHub's runners are not rate-limited at this pace; local runs may need more
+PAUSE = 1.0   # Roblox answers 429 at a faster pace, even from GitHub
 UA = "roblox-radar/1.0 (+https://github.com)"
 
 
@@ -124,24 +126,38 @@ def same_hour_reading(times_s, days):
 
 
 def write_trends(history, stamp):
+    """Per-game numbers the page needs without downloading the history: 24h/7d/30d change
+    (same time of day), average of the last 24 h (for DAU/earnings) and the peak on record."""
     times_s = [datetime.fromisoformat(x.replace("Z", "+00:00")).timestamp() for x in history["times"]]
     refs = [same_hour_reading(times_s, d) for d in (1, 7, 30)]
+    last = times_s[-1] if times_s else 0
+    day_idx = [i for i, ts in enumerate(times_s) if ts >= last - 86400]
     out = {}
     for gid, s in history["series"].items():
         cur = s[-1] if len(s) == len(times_s) else None
-        row = []
-        for r in refs:
+        row = {}
+        for k, r in zip(("d1", "d7", "d30"), refs):
             prev = s[r] if r is not None and r < len(s) else None
-            row.append(round((cur - prev) / prev * 100, 1) if cur is not None and prev else None)
-        if any(v is not None for v in row):
+            if cur is not None and prev:
+                row[k] = round((cur - prev) / prev * 100, 1)
+        vals24 = [s[i] for i in day_idx if i < len(s) and s[i] is not None]
+        if len(vals24) >= 3:
+            row["a24"] = round(sum(vals24) / len(vals24))
+        peak = max((v for v in s if v is not None), default=None)
+        if peak is not None:
+            row["pk"] = peak
+        if row:
             out[gid] = row
-    TRENDS.write_text(json.dumps({"generated": stamp, "t": out}, separators=(",", ":")), encoding="utf-8")
+    TRENDS.write_text(json.dumps({"generated": stamp, "n": len(times_s),
+                                  "first": history["times"][0] if history["times"] else None,
+                                  "last": history["times"][-1] if history["times"] else None, "t": out},
+                                 separators=(",", ":")), encoding="utf-8")
 
 
 def main():
     light = "--light" in sys.argv
     games_doc = json.loads(GAMES.read_text(encoding="utf-8"))
-    history = json.loads(HISTORY.read_text(encoding="utf-8"))
+    history = load_history()
     games = games_doc["games"]
     ids = [str(g["id"]) for g in games]
 
@@ -215,7 +231,7 @@ def main():
     write_trends(history, stamp)
     games_doc["generated"] = stamp
     GAMES.write_text(json.dumps(games_doc, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    HISTORY.write_text(json.dumps(history, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    save_history(history)
     print(f"done: {len(details)} games updated, history now has {len(history['times'])} readings")
 
 

@@ -18,9 +18,11 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from histstore import load_history  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 GAMES = ROOT / "data" / "games.json"
-HISTORY = ROOT / "data" / "history.json"
 WATCHLIST = ROOT / "data" / "watchlist.json"
 STATE = ROOT / "data" / "alerts_state.json"
 
@@ -67,7 +69,7 @@ def fmt(n):
 def main():
     webhook = os.environ.get("DISCORD_WEBHOOK", "").strip()
     doc = json.loads(GAMES.read_text(encoding="utf-8"))
-    hist = json.loads(HISTORY.read_text(encoding="utf-8"))
+    hist = load_history()
     watch = set()
     if WATCHLIST.exists():
         try:
