@@ -526,6 +526,7 @@ tr.st.open .chev{transform:rotate(90deg);}
   @keyframes bump{from{color:var(--good)}to{color:inherit}}
 }
 
+.dc-dot{color:#8b93ff;font-size:10px;vertical-align:1px;}
 .nobuy-badge{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:700;letter-spacing:.06em;padding:1px 6px;border-radius:4px;background:color-mix(in srgb,var(--risk) 18%,transparent);color:var(--risk);border:1px solid color-mix(in srgb,var(--risk) 45%,transparent);vertical-align:1px;}
 .nobuy-badge.big{font-size:11px;padding:3px 9px;margin-right:6px;}
 
@@ -611,6 +612,7 @@ tr.st.open .chev{transform:rotate(90deg);}
       <select id="trendSelect" aria-label="Filter by trend"></select>
       <select id="ownerSelect" aria-label="Filter by owner"></select>
       <select id="nobuySelect" aria-label="Not-to-buy filter"></select>
+      <select id="discordSelect" aria-label="Discord filter"></select>
       <select id="sortSelect" aria-label="Sort games"></select>
       <button class="clear-btn" id="clearBtn" type="button" data-i18n="reset"></button>
     </div>
@@ -820,6 +822,18 @@ const NOBUY_I18N = {
       why:'購入非推奨リスト：modded、ロールプレイ、Minecraftコピー、troll tower、hood RP、brainrot、寄付、インクリメンタル、hangout、MM2系。'}
 };
 const tn = k => (NOBUY_I18N[settings.lang] || NOBUY_I18N.en)[k];
+// does the game publish a Discord invite? (social links, or one found in its description)
+const hasDiscord = g => (g.socials || []).some(s => s.k === 'discord');
+const DISCORD_FILTER_I18N = {
+  en:{'':'Discord: all', yes:'Has a Discord server', no:'No Discord server'},
+  es:{'':'Discord: todos', yes:'Con servidor de Discord', no:'Sin servidor de Discord'},
+  pt:{'':'Discord: todos', yes:'Com servidor no Discord', no:'Sem servidor no Discord'},
+  fr:{'':'Discord : tous', yes:'Avec serveur Discord', no:'Sans serveur Discord'},
+  de:{'':'Discord: alle', yes:'Mit Discord-Server', no:'Ohne Discord-Server'},
+  it:{'':'Discord: tutti', yes:'Con server Discord', no:'Senza server Discord'},
+  ru:{'':'Discord: все', yes:'Есть сервер Discord', no:'Нет сервера Discord'},
+  ja:{'':'Discord：すべて', yes:'Discordサーバーあり', no:'Discordサーバーなし'}
+};
 const EXTRA_TAGS = {
   en:{modded:'Modded', 'hood-rp':'Hood roleplay', donation:'Donation game', incremental:'Incremental / idle', hangout:'Hangout', 'troll-tower':'Troll tower'},
   es:{modded:'Modded', 'hood-rp':'Hood roleplay', donation:'Juego de donaciones', incremental:'Incremental / idle', hangout:'Hangout', 'troll-tower':'Troll tower'},
@@ -863,20 +877,20 @@ function applyTheme(){
 }
 applyTheme();
 
-const defaultState = () => ({search:'', cat:'', age:'', trend:'', owner:'', nobuy:'', tags:new Set(), sort:'playing_desc', shown:PAGE});
+const defaultState = () => ({search:'', cat:'', age:'', trend:'', owner:'', nobuy:'', discord:'', tags:new Set(), sort:'playing_desc', shown:PAGE});
 let state = defaultState();
 let view = 'games', marketBy = 'tags';
 
 function saveFilters(){
   if(!settings.rememberFilters) return;
-  try { localStorage.setItem(FILTERS_KEY, JSON.stringify({search:state.search, cat:state.cat, age:state.age, trend:state.trend, owner:state.owner, nobuy:state.nobuy, tags:[...state.tags], sort:state.sort})); } catch (e) {}
+  try { localStorage.setItem(FILTERS_KEY, JSON.stringify({search:state.search, cat:state.cat, age:state.age, trend:state.trend, owner:state.owner, nobuy:state.nobuy, discord:state.discord, tags:[...state.tags], sort:state.sort})); } catch (e) {}
 }
 function loadFilters(){
   if(!settings.rememberFilters) return;
   try {
     const f = JSON.parse(localStorage.getItem(FILTERS_KEY) || 'null');
     if(!f) return;
-    state.search = f.search || ''; state.cat = f.cat || ''; state.age = f.age || ''; state.trend = f.trend || ''; state.owner = f.owner || ''; state.nobuy = f.nobuy || '';
+    state.search = f.search || ''; state.cat = f.cat || ''; state.age = f.age || ''; state.trend = f.trend || ''; state.owner = f.owner || ''; state.nobuy = f.nobuy || ''; state.discord = f.discord || '';
     state.tags = new Set(f.tags || []); state.sort = f.sort || 'playing_desc';
   } catch (e) {}
 }
@@ -1038,6 +1052,9 @@ function applyLanguage(){
   const nb = document.getElementById('nobuySelect');
   nb.innerHTML = Object.entries(tn('sel')).map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
   nb.value = state.nobuy;
+  const dc = document.getElementById('discordSelect');
+  dc.innerHTML = Object.entries(DISCORD_FILTER_I18N[settings.lang] || DISCORD_FILTER_I18N.en).map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+  dc.value = state.discord;
   document.getElementById('search').value = state.search;
 
   buildCatSelect();
@@ -1115,6 +1132,8 @@ function applyFilters(){
   if(state.owner) rows = rows.filter(g => g.cType === state.owner);
   if(state.nobuy === 'hide') rows = rows.filter(g => !isNoBuy(g));
   if(state.nobuy === 'only') rows = rows.filter(isNoBuy);
+  if(state.discord === 'yes') rows = rows.filter(hasDiscord);
+  if(state.discord === 'no') rows = rows.filter(g => !hasDiscord(g));
   if(settings.hideAuto) rows = rows.filter(g => g.src === 'review');
   const [field, dir] = state.sort.split('_');
   return [...rows].sort((a,b) => {
@@ -1159,7 +1178,7 @@ function rowHtml(g){
       <button class="thumb-btn" data-open="${g._i}" title="${esc(t('openStats')(g.name))}" aria-label="${esc(t('openStats')(g.name))}">${imgHtml(g, 44)}</button>
       <div class="game-text">
         <button class="game-name" data-open="${g._i}">${esc(g.name)}</button>
-        <span class="creator">${t('by')} ${esc(g.creator || t('unknown'))}${g.verified ? ' ✓' : ''} ${trendBadge(g.trend)}${isNoBuy(g) ? ` <span class="nobuy-badge" title="${esc(tn('why'))}">🚫 ${tn('badge')}</span>` : ''}</span>
+        <span class="creator">${t('by')} ${esc(g.creator || t('unknown'))}${g.verified ? ' ✓' : ''} ${trendBadge(g.trend)}${hasDiscord(g) ? ` <span class="dc-dot" title="${esc((DISCORD_FILTER_I18N[settings.lang] || DISCORD_FILTER_I18N.en).yes)}">◆</span>` : ''}${isNoBuy(g) ? ` <span class="nobuy-badge" title="${esc(tn('why'))}">🚫 ${tn('badge')}</span>` : ''}</span>
       </div>
     </div></td>
     <td><span class="cat-pill" title="${reviewed ? t('reviewed') : t('autoTip')}">${catLabel(g.cat)}${reviewed ? '' : ` <span class="auto">${t('auto')}</span>`}</span></td>
@@ -1716,6 +1735,7 @@ document.getElementById('ageSelect').addEventListener('change', e => { state.age
 document.getElementById('trendSelect').addEventListener('change', e => { state.trend = e.target.value; state.shown = PAGE; render(); });
 document.getElementById('ownerSelect').addEventListener('change', e => { state.owner = e.target.value; state.shown = PAGE; render(); });
 document.getElementById('nobuySelect').addEventListener('change', e => { state.nobuy = e.target.value; state.shown = PAGE; render(); });
+document.getElementById('discordSelect').addEventListener('change', e => { state.discord = e.target.value; state.shown = PAGE; render(); });
 document.getElementById('sortSelect').addEventListener('change', e => { if(e.target.value){ state.sort = e.target.value; state.shown = PAGE; render(); } });
 document.getElementById('moreBtn').addEventListener('click', () => { state.shown += PAGE; render(); });
 document.getElementById('clearBtn').addEventListener('click', () => {
@@ -1726,6 +1746,7 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   document.getElementById('trendSelect').value = '';
   document.getElementById('ownerSelect').value = '';
   document.getElementById('nobuySelect').value = '';
+  document.getElementById('discordSelect').value = '';
   document.getElementById('sortSelect').value = 'playing_desc';
   render();
 });
@@ -2784,6 +2805,7 @@ function buildUrl(gameId){
   if(state.trend) q.set('trend', state.trend);
   if(state.owner) q.set('owner', state.owner);
   if(state.nobuy) q.set('nobuy', state.nobuy);
+  if(state.discord) q.set('discord', state.discord);
   if(state.tags.size) q.set('tags', [...state.tags].join(','));
   if(state.sort !== 'playing_desc') q.set('sort', state.sort);
   if(view === 'market') q.set('view', 'market');
@@ -2819,7 +2841,7 @@ function applyUrlState(){
   const q = new URLSearchParams(location.search);
   if(!q.toString()) return null;
   state.search = q.get('q') || ''; state.cat = q.get('cat') || ''; state.age = q.get('age') || '';
-  state.trend = q.get('trend') || ''; state.owner = q.get('owner') || ''; state.nobuy = q.get('nobuy') || '';
+  state.trend = q.get('trend') || ''; state.owner = q.get('owner') || ''; state.nobuy = q.get('nobuy') || ''; state.discord = q.get('discord') || '';
   state.tags = new Set((q.get('tags') || '').split(',').filter(Boolean));
   if(q.get('sort')) state.sort = q.get('sort');
   if(q.get('view') === 'market') view = 'market';
