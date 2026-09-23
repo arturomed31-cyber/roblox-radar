@@ -355,7 +355,7 @@ def creators_of(games_doc):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--min-players", type=int, default=1000)
+    ap.add_argument("--min-players", type=int, default=50)
     ap.add_argument("--pages", type=int, default=2, help="max search pages per keyword")
     ap.add_argument("--apply-only", action="store_true")
     ap.add_argument("--shard", help="i/N: sweep only slice i of the sources and write candidates")

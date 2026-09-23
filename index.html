@@ -549,6 +549,11 @@ tr.st.open .chev{transform:rotate(90deg);}
 .premium{font-family:'IBM Plex Mono',monospace;}
 .premium.hi{color:var(--good);} .premium.lo{color:var(--risk);}
 @media (max-width:700px){ .lim-wrap{max-height:none;} }
+
+.range-in{display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--text-dim);}
+.range-in input{width:78px;background:var(--panel-2);border:1px solid var(--border);color:var(--text);padding:8px 8px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
+.range-in input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+.range-in input::-webkit-outer-spin-button,.range-in input::-webkit-inner-spin-button{opacity:.35;}
 </style>
 </head>
 <body>
@@ -613,6 +618,7 @@ tr.st.open .chev{transform:rotate(90deg);}
       <select id="ownerSelect" aria-label="Filter by owner"></select>
       <select id="nobuySelect" aria-label="Not-to-buy filter"></select>
       <select id="discordSelect" aria-label="Discord filter"></select>
+      <span class="range-in"><label for="minPl" id="plLbl"></label><input id="minPl" type="number" min="0" step="50" inputmode="numeric" aria-label="Minimum players"><span>–</span><input id="maxPl" type="number" min="0" step="50" inputmode="numeric" aria-label="Maximum players"></span>
       <select id="sortSelect" aria-label="Sort games"></select>
       <button class="clear-btn" id="clearBtn" type="button" data-i18n="reset"></button>
     </div>
@@ -822,6 +828,12 @@ const NOBUY_I18N = {
       why:'購入非推奨リスト：modded、ロールプレイ、Minecraftコピー、troll tower、hood RP、brainrot、寄付、インクリメンタル、hangout、MM2系。'}
 };
 const tn = k => (NOBUY_I18N[settings.lang] || NOBUY_I18N.en)[k];
+const PLAYERS_RANGE_I18N = {
+  en:{lbl:'Players', min:'min', max:'max'}, es:{lbl:'Jugadores', min:'mín', max:'máx'}, pt:{lbl:'Jogadores', min:'mín', max:'máx'},
+  fr:{lbl:'Joueurs', min:'min', max:'max'}, de:{lbl:'Spieler', min:'min', max:'max'}, it:{lbl:'Giocatori', min:'min', max:'max'},
+  ru:{lbl:'Игроки', min:'мин', max:'макс'}, ja:{lbl:'プレイヤー', min:'最小', max:'最大'}
+};
+const tp = k => (PLAYERS_RANGE_I18N[settings.lang] || PLAYERS_RANGE_I18N.en)[k];
 // does the game publish a Discord invite? (social links, or one found in its description)
 const hasDiscord = g => (g.socials || []).some(s => s.k === 'discord');
 const DISCORD_FILTER_I18N = {
@@ -877,20 +889,20 @@ function applyTheme(){
 }
 applyTheme();
 
-const defaultState = () => ({search:'', cat:'', age:'', trend:'', owner:'', nobuy:'', discord:'', tags:new Set(), sort:'playing_desc', shown:PAGE});
+const defaultState = () => ({search:'', cat:'', age:'', trend:'', owner:'', nobuy:'', discord:'', pmin:'', pmax:'', tags:new Set(), sort:'playing_desc', shown:PAGE});
 let state = defaultState();
 let view = 'games', marketBy = 'tags';
 
 function saveFilters(){
   if(!settings.rememberFilters) return;
-  try { localStorage.setItem(FILTERS_KEY, JSON.stringify({search:state.search, cat:state.cat, age:state.age, trend:state.trend, owner:state.owner, nobuy:state.nobuy, discord:state.discord, tags:[...state.tags], sort:state.sort})); } catch (e) {}
+  try { localStorage.setItem(FILTERS_KEY, JSON.stringify({search:state.search, cat:state.cat, age:state.age, trend:state.trend, owner:state.owner, nobuy:state.nobuy, discord:state.discord, pmin:state.pmin, pmax:state.pmax, tags:[...state.tags], sort:state.sort})); } catch (e) {}
 }
 function loadFilters(){
   if(!settings.rememberFilters) return;
   try {
     const f = JSON.parse(localStorage.getItem(FILTERS_KEY) || 'null');
     if(!f) return;
-    state.search = f.search || ''; state.cat = f.cat || ''; state.age = f.age || ''; state.trend = f.trend || ''; state.owner = f.owner || ''; state.nobuy = f.nobuy || ''; state.discord = f.discord || '';
+    state.search = f.search || ''; state.cat = f.cat || ''; state.age = f.age || ''; state.trend = f.trend || ''; state.owner = f.owner || ''; state.nobuy = f.nobuy || ''; state.discord = f.discord || ''; state.pmin = f.pmin || ''; state.pmax = f.pmax || '';
     state.tags = new Set(f.tags || []); state.sort = f.sort || 'playing_desc';
   } catch (e) {}
 }
@@ -1052,6 +1064,11 @@ function applyLanguage(){
   const nb = document.getElementById('nobuySelect');
   nb.innerHTML = Object.entries(tn('sel')).map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
   nb.value = state.nobuy;
+  document.getElementById('plLbl').textContent = tp('lbl');
+  document.getElementById('minPl').placeholder = tp('min');
+  document.getElementById('maxPl').placeholder = tp('max');
+  document.getElementById('minPl').value = state.pmin;
+  document.getElementById('maxPl').value = state.pmax;
   const dc = document.getElementById('discordSelect');
   dc.innerHTML = Object.entries(DISCORD_FILTER_I18N[settings.lang] || DISCORD_FILTER_I18N.en).map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
   dc.value = state.discord;
@@ -1115,8 +1132,10 @@ function buildColChips(){
 /* ---------- filters + table ---------- */
 function applyFilters(){
   let rows = GAMES;
-  const minP = Number(settings.minPlayers) || 0;
+  const typedMin = state.pmin === '' ? null : Number(state.pmin), typedMax = state.pmax === '' ? null : Number(state.pmax);
+  const minP = typedMin != null ? typedMin : (Number(settings.minPlayers) || 0);
   if(minP) rows = rows.filter(g => (g.playing||0) >= minP);
+  if(typedMax != null) rows = rows.filter(g => (g.playing||0) <= typedMax);
   if(state.search){
     const q = state.search.toLowerCase();
     rows = rows.filter(g => g.name.toLowerCase().includes(q) || (g.creator||'').toLowerCase().includes(q));
@@ -1736,6 +1755,12 @@ document.getElementById('trendSelect').addEventListener('change', e => { state.t
 document.getElementById('ownerSelect').addEventListener('change', e => { state.owner = e.target.value; state.shown = PAGE; render(); });
 document.getElementById('nobuySelect').addEventListener('change', e => { state.nobuy = e.target.value; state.shown = PAGE; render(); });
 document.getElementById('discordSelect').addEventListener('change', e => { state.discord = e.target.value; state.shown = PAGE; render(); });
+let plTimer = null;
+['minPl','maxPl'].forEach(id => document.getElementById(id).addEventListener('input', e => {
+  const v = e.target.value.trim();
+  state[id === 'minPl' ? 'pmin' : 'pmax'] = v === '' ? '' : Math.max(0, Math.floor(Number(v) || 0));
+  clearTimeout(plTimer); plTimer = setTimeout(() => { state.shown = PAGE; render(); }, 250);   // wait for typing to settle
+}));
 document.getElementById('sortSelect').addEventListener('change', e => { if(e.target.value){ state.sort = e.target.value; state.shown = PAGE; render(); } });
 document.getElementById('moreBtn').addEventListener('click', () => { state.shown += PAGE; render(); });
 document.getElementById('clearBtn').addEventListener('click', () => {
@@ -1747,6 +1772,7 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   document.getElementById('ownerSelect').value = '';
   document.getElementById('nobuySelect').value = '';
   document.getElementById('discordSelect').value = '';
+  document.getElementById('minPl').value = ''; document.getElementById('maxPl').value = '';
   document.getElementById('sortSelect').value = 'playing_desc';
   render();
 });
@@ -2806,6 +2832,8 @@ function buildUrl(gameId){
   if(state.owner) q.set('owner', state.owner);
   if(state.nobuy) q.set('nobuy', state.nobuy);
   if(state.discord) q.set('discord', state.discord);
+  if(state.pmin !== '') q.set('pmin', state.pmin);
+  if(state.pmax !== '') q.set('pmax', state.pmax);
   if(state.tags.size) q.set('tags', [...state.tags].join(','));
   if(state.sort !== 'playing_desc') q.set('sort', state.sort);
   if(view === 'market') q.set('view', 'market');
@@ -2841,7 +2869,7 @@ function applyUrlState(){
   const q = new URLSearchParams(location.search);
   if(!q.toString()) return null;
   state.search = q.get('q') || ''; state.cat = q.get('cat') || ''; state.age = q.get('age') || '';
-  state.trend = q.get('trend') || ''; state.owner = q.get('owner') || ''; state.nobuy = q.get('nobuy') || ''; state.discord = q.get('discord') || '';
+  state.trend = q.get('trend') || ''; state.owner = q.get('owner') || ''; state.nobuy = q.get('nobuy') || ''; state.discord = q.get('discord') || ''; state.pmin = q.get('pmin') ?? ''; state.pmax = q.get('pmax') ?? '';
   state.tags = new Set((q.get('tags') || '').split(',').filter(Boolean));
   if(q.get('sort')) state.sort = q.get('sort');
   if(q.get('view') === 'market') view = 'market';

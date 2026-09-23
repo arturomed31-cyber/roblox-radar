@@ -7,7 +7,7 @@ on:
     inputs:
       min_players:
         description: "Minimum concurrent players for newly discovered games"
-        default: "100"
+        default: "50"
         required: false
       pages:
         description: "Search pages per keyword (each page = 40 results)"
@@ -36,9 +36,9 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Discover new games (100+ players, 1 page per keyword)
+      - name: Discover new games (50+ players, 1 page per keyword)
         if: ${{ github.event.inputs.skip_discovery != 'true' }}
-        run: python scripts/discover.py --min-players "${{ github.event.inputs.min_players || '100' }}" --pages "${{ github.event.inputs.pages || '1' }}" --no-groups
+        run: python scripts/discover.py --min-players "${{ github.event.inputs.min_players || '50' }}" --pages "${{ github.event.inputs.pages || '1' }}" --no-groups
         continue-on-error: true
 
       - name: Pull live stats from Roblox (votes, images)
