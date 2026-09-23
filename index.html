@@ -153,6 +153,8 @@ td{padding:8px 12px;font-size:13px;vertical-align:middle;}
 .age{font-family:'IBM Plex Mono',monospace;text-align:right;color:var(--text-dim);white-space:nowrap;}
 .age.fresh{color:var(--accent);}
 .empty-state{padding:44px 20px;text-align:center;color:var(--text-faint);font-size:13.5px;}
+.active-filters{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px;}
+.active-filters .chip{cursor:pointer;}
 .more-row{display:flex;justify-content:center;padding:14px;}
 .more-btn{font-family:inherit;font-size:13px;color:var(--text);background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:9px 18px;cursor:pointer;}
 .more-btn:hover{border-color:var(--accent);}
@@ -1059,7 +1061,10 @@ function applyLanguage(){
   owner.innerHTML = OWNER_OPTS.map(([v,k]) => `<option value="${v}">${t(k)}</option>`).join('');
   owner.value = state.owner;
   const trend = document.getElementById('trendSelect');
-  trend.innerHTML = TREND_OPTS.map(([v,k]) => `<option value="${v}">${t(k)}</option>`).join('');
+  trend.innerHTML = TREND_OPTS.map(([v,k]) => {
+    const n = v ? GAMES.filter(g => g.trend === v).length : GAMES.length;
+    return `<option value="${v}" ${!n && v ? 'disabled' : ''}>${t(k)}${GAMES.length ? ` (${n})` : ''}</option>`;
+  }).join('');
   trend.value = state.trend;
   const nb = document.getElementById('nobuySelect');
   nb.innerHTML = Object.entries(tn('sel')).map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
@@ -1209,6 +1214,48 @@ function rowHtml(g){
 function animateRows(tbody){
   [...tbody.children].slice(0, 24).forEach((tr, i) => { tr.classList.add('in'); tr.style.animationDelay = (i * 22) + 'ms'; });
 }
+const FILTER_CHIP_I18N = {
+  en:{drop:'Remove this filter', why7d:'7-day trends need a week of readings; they fill in on their own.'},
+  es:{drop:'Quitar este filtro', why7d:'Las tendencias de 7 días necesitan una semana de lecturas; se llenan solas.'},
+  pt:{drop:'Remover este filtro', why7d:'As tendências de 7 dias precisam de uma semana de leituras.'},
+  fr:{drop:'Retirer ce filtre', why7d:'Les tendances sur 7 jours nécessitent une semaine de relevés.'},
+  de:{drop:'Diesen Filter entfernen', why7d:'7-Tage-Trends brauchen eine Woche Messungen.'},
+  it:{drop:'Rimuovi questo filtro', why7d:'Le tendenze a 7 giorni richiedono una settimana di letture.'},
+  ru:{drop:'Убрать этот фильтр', why7d:'Тренды за 7 дней требуют недели измерений.'},
+  ja:{drop:'このフィルターを外す', why7d:'7日トレンドには1週間分の計測が必要です。'}
+};
+const tf = k => (FILTER_CHIP_I18N[settings.lang] || FILTER_CHIP_I18N.en)[k];
+function activeFilters(){
+  const out = [];
+  if(state.search) out.push(['search', `"${state.search}"`]);
+  if(state.cat) out.push(['cat', catLabel(state.cat)]);
+  if(state.age) out.push(['age', t((AGE_OPTS.find(o => o[0] === state.age) || [,'age_any'])[1])]);
+  if(state.trend) out.push(['trend', t((TREND_OPTS.find(o => o[0] === state.trend) || [,'trend_any'])[1]) + (state.trend !== 'new' && GAMES.every(g => g.d7 == null) ? ' — ' + tf('why7d') : '')]);
+  if(state.owner) out.push(['owner', t((OWNER_OPTS.find(o => o[0] === state.owner) || [,'own_any'])[1])]);
+  if(state.nobuy) out.push(['nobuy', tn('sel')[state.nobuy]]);
+  if(state.discord) out.push(['discord', (DISCORD_FILTER_I18N[settings.lang] || DISCORD_FILTER_I18N.en)[state.discord]]);
+  if(state.pmin !== '' || state.pmax !== '') out.push(['players', `${tp('lbl')} ${state.pmin || 0}–${state.pmax || '∞'}`]);
+  [...state.tags].forEach(k => out.push(['tag:' + k, tagLabel(k)]));
+  if(settings.hideAuto) out.push(['hideAuto', t('s_hideauto')]);
+  if(Number(settings.minPlayers) && state.pmin === '') out.push(['minPlayers', `${tp('lbl')} ≥ ${settings.minPlayers}`]);
+  return out;
+}
+function activeFilterChips(){
+  return activeFilters().map(([k, label]) =>
+    `<button type="button" class="chip on" data-drop="${esc(k)}" title="${esc(tf('drop'))}">${esc(label)} ✕</button>`).join('');
+}
+function dropFilter(k){
+  if(k.startsWith('tag:')) state.tags.delete(k.slice(4));
+  else if(k === 'players'){ state.pmin = ''; state.pmax = ''; document.getElementById('minPl').value = ''; document.getElementById('maxPl').value = ''; }
+  else if(k === 'hideAuto'){ settings.hideAuto = false; saveSettings(); syncSettingsUI(); }
+  else if(k === 'minPlayers'){ settings.minPlayers = '0'; saveSettings(); syncSettingsUI(); }
+  else {
+    state[k] = '';
+    const sel = {cat:'catSelect', age:'ageSelect', trend:'trendSelect', owner:'ownerSelect', nobuy:'nobuySelect', discord:'discordSelect', search:'search'}[k];
+    if(sel) document.getElementById(sel).value = '';
+  }
+  state.shown = PAGE; render();
+}
 function render(){
   saveFilters();
   syncUrl();
@@ -1229,7 +1276,9 @@ function render(){
   const moreRow = document.getElementById('moreRow');
   const span = 3 + visibleCols().length;
   if(!rows.length){
-    tbody.innerHTML = `<tr><td colspan="${span}"><div class="empty-state">${t('empty')}</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${span}"><div class="empty-state">${t('empty')}
+      <div class="active-filters">${activeFilterChips()}</div></div></td></tr>`;
+    tbody.querySelectorAll('[data-drop]').forEach(b => b.addEventListener('click', () => dropFilter(b.dataset.drop)));
     moreRow.hidden = true;
     return;
   }
