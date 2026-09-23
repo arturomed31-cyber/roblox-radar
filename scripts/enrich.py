@@ -10,6 +10,7 @@ for it. Games are re-enriched every --max-age days, most-played first.
 """
 import argparse
 import json
+import re
 import os
 import sys
 import time
@@ -25,6 +26,25 @@ UA = "roblox-radar/1.0 (+https://github.com)"
 
 SOCIAL_TYPES = {"discord": "discord", "youtube": "youtube", "twitter": "x", "x": "x", "tiktok": "tiktok",
                 "twitch": "twitch", "facebook": "facebook", "guilded": "guilded", "robloxgroup": "group"}
+
+
+SOCIAL_PATTERNS = [
+    ("discord", r"(?i)(?:discord\.gg|discord\.com/invite|dsc\.gg)/[A-Za-z0-9\-]{4,}"),
+    ("youtube", r"(?i)(?:youtube\.com/(?:@|c/|channel/|user/)[A-Za-z0-9_\-./]+|youtu\.be/[A-Za-z0-9_\-]+)"),
+    ("x", r"(?i)(?:twitter|x)\.com/[A-Za-z0-9_]{2,}"),
+    ("tiktok", r"(?i)tiktok\.com/@[A-Za-z0-9_.]{2,}"),
+]
+
+
+def socials_in_text(text):
+    """Invite links a developer wrote in the game description (no cookie needed)."""
+    out = []
+    for kind, pat in SOCIAL_PATTERNS:
+        m = re.search(pat, text or "")
+        if m:
+            u = m.group(0)
+            out.append({"k": kind, "u": u if u.startswith("http") else "https://" + u, "t": "description"})
+    return out
 
 
 class Unauthorized(Exception):
@@ -107,13 +127,18 @@ def main():
     todo.sort(key=lambda g: (bool(biz.get(str(g["id"]), {}).get("enrichedAt")), -(g.get("playing") or 0)))
     print(f"enriching {len(todo)} of {len(games)} games (budget {args.budget_minutes} min)", flush=True)
 
-    # ---- flags from the batch endpoint (cheap) ----
-    flags = {}
+    # ---- flags from the batch endpoint (cheap); the same call carries the description,
+    # which is where many small games put their Discord invite instead of the social links ----
+    flags, desc_socials = {}, {}
     for chunk in batches([str(g["id"]) for g in todo], 50):
         d = get_json("https://games.roblox.com/v1/games?universeIds=" + ",".join(chunk))
         for item in (d or {}).get("data", []):
             flags[str(item["id"])] = {"vip": bool(item.get("createVipServersAllowed")), "paid": item.get("price")}
+            found = socials_in_text(item.get("description"))
+            if found:
+                desc_socials[str(item["id"])] = found
         time.sleep(0.8)
+    print(f"  social links found in descriptions: {len(desc_socials)}", flush=True)
 
     # ---- owner groups: name/created/verified in batches of 100 (cheap); member counts are
     # one request per group and heavily rate-limited, so they are fetched lazily below ----
@@ -179,7 +204,7 @@ def main():
                         k = SOCIAL_TYPES.get(str(item.get("type", "")).lower())
                         if k and item.get("url"):
                             links.append({"k": k, "u": item["url"], "t": item.get("title") or ""})
-                    e["socials"] = links
+                    e["socials"] = links or desc_socials.get(gid, [])
             except Unauthorized as ex:
                 if ex.code == 403:
                     forbidden += 1
@@ -187,6 +212,8 @@ def main():
                     print(f"  session expired mid-run ({ex}); social links stop here", flush=True)
                     cookie_hdr = None
             time.sleep(0.5)
+        if not e.get("socials") and desc_socials.get(gid):
+            e["socials"] = desc_socials[gid]
         f = flags.get(gid)
         if f:
             e["vip"], e["paid"] = f["vip"], f["paid"]
