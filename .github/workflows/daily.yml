@@ -28,7 +28,7 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 70
     steps:
       - uses: actions/checkout@v4
 
@@ -36,9 +36,9 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Discover new games (50+ players, 1 page per keyword)
+      - name: Discover new games (50+ players, rotating creator catalogues)
         if: ${{ github.event.inputs.skip_discovery != 'true' }}
-        run: python scripts/discover.py --min-players "${{ github.event.inputs.min_players || '50' }}" --pages "${{ github.event.inputs.pages || '1' }}" --no-groups
+        run: python scripts/discover.py --min-players "${{ github.event.inputs.min_players || '50' }}" --pages "${{ github.event.inputs.pages || '2' }}" --creator-slice 700
         continue-on-error: true
 
       - name: Pull live stats from Roblox (votes, images)
@@ -54,7 +54,7 @@ jobs:
         run: |
           git config user.name "roblox-radar bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/games.json data/h data/trends.json data/overrides.json data/alerts_state.json
+          git add data/games.json data/h data/trends.json data/overrides.json data/alerts_state.json data/discover_state.json
           if git diff --cached --quiet; then
             echo "nothing changed"
           else

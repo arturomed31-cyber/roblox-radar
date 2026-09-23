@@ -44,6 +44,11 @@ KEYWORDS = [
     "brainrot", "steal", "minecraft", "murder mystery", "racing", "soccer", "football", "basketball", "fishing", "pet",
     "survival", "clicker", "battlegrounds", "escape", "prison", "city", "school", "zombie", "parkour", "sword",
     "magic", "farm", "restaurant", "hotel", "hangout", "duels", "rng", "mining", "build", "craft",
+    # long tail: wording typical of small and brand-new games
+    "beta", "early access", "alpha", "new game", "update 1", "demo", "remake", "revamp", "test",
+    "grow a", "eat the", "collect a", "unbox", "merge a", "carry a", "push a", "throw a", "climb a",
+    "escape the", "survive the", "find the", "guess the", "become a", "be a", "catch a", "hide from",
+    "obby but", "tower of", "roll a", "spin a", "open a", "sell a", "dig a", "fish a", "race a",
     "backrooms", "granny", "squid game", "bed wars", "one piece", "dragon ball", "naruto", "car", "train", "plane",
     "pizza", "baby", "family", "dress up", "story", "scary", "gun", "war", "army", "ninja",
     "dungeon", "idle", "grow", "kick", "slap", "lift", "race", "pvp", "trading", "hide and seek",
@@ -253,6 +258,22 @@ def socials(desc):
     return out
 
 
+STATE = ROOT / "data" / "discover_state.json"
+
+
+def rotate_slice(creators, size):
+    """Return `size` creators, continuing where the previous run stopped, wrapping around."""
+    try:
+        start = json.loads(STATE.read_text(encoding="utf-8")).get("creator_cursor", 0)
+    except Exception:
+        start = 0
+    start %= max(1, len(creators))
+    picked = (creators + creators)[start:start + size]
+    STATE.write_text(json.dumps({"creator_cursor": (start + size) % max(1, len(creators))}), encoding="utf-8")
+    print(f"creators: reading {len(picked)} of {len(creators)} (from #{start})", flush=True)
+    return picked
+
+
 # ---------------------------------------------------------------- adding games
 def add_candidates(games_doc, history, overrides, pool, min_players):
     known = {str(g["id"]) for g in games_doc["games"]}
@@ -362,6 +383,8 @@ def main():
     ap.add_argument("--out", help="candidates file for --shard")
     ap.add_argument("--merge", help="directory with candidates-*.json from shards")
     ap.add_argument("--no-groups", action="store_true", help="skip creator catalogues")
+    ap.add_argument("--creator-slice", type=int, default=0,
+                    help="read only this many creator catalogues, rotating a different slice each run")
     args = ap.parse_args()
 
     games_doc = json.loads(GAMES.read_text(encoding="utf-8"))
@@ -387,6 +410,8 @@ def main():
         print(f"merged pool: {len(pool)}", flush=True)
     else:
         creators = [] if args.no_groups else creators_of(games_doc)
+        if args.creator_slice and creators:
+            creators = rotate_slice(creators, args.creator_slice)
         if args.shard:
             i, n = (int(x) for x in args.shard.split("/"))
             kws = KEYWORDS[i::n]
